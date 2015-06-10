@@ -6,7 +6,7 @@ class Cell:
         self.coord = coord
         self.neighbors = [None, None, None, None]
 
-        self.initValue = None
+        self.init_value = None
         self.value = None
         self.marks = set()
 
@@ -17,8 +17,8 @@ class Cell:
 
     def set_initial_value(self, value):
 
-        self.initialValue = value
-        self.setValue(value)
+        self.initial_value = value
+        self.set_value(value)
 
     def set_value(self, value):
 
@@ -44,3 +44,9 @@ class Cell:
 
         self.partition_subsets[partition_name] = subset_index
 
+    def __str__(self):
+
+        if(self.value is None):
+            return '.'
+        else:
+            return str(self.value)

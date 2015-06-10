@@ -19,13 +19,13 @@ class Grid:
 
     def _init_cells(self):
 
-        row = []
-
         for i in range(self.m):
+            row = []
+
             for j in range(self.n):
                 row.append(Cell(Coord(i, j)))
 
-        self.cells.append(row)
+            self.cells.append(row)
 
     def _init_neighbors(self):
 
@@ -37,6 +37,18 @@ class Grid:
                     neighbor_coord = cell.coord.add(coord.RELATIVE_COORD[d])
 
                     cell.neighbors[d] = self.get_cell(neighbor_coord)
+
+    def __str__(self):
+
+        result = ''
+
+        for i in range(self.m):
+            for j in range(self.n):
+                result += str(self.cells[i][j]) + ' '
+
+            result += '\n'
+
+        return result
 
     def get_cell(self, coord):
 
@@ -97,8 +109,8 @@ class Grid:
 
             for j in range(self.n):
 
-                block_i = i / num_row_blocks
-                block_j = j / num_col_blocks
+                block_i = i // num_row_blocks
+                block_j = j // num_col_blocks
 
                 row.append(block_i * num_col_blocks + block_j);
 

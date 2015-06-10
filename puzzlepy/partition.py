@@ -6,7 +6,9 @@ class Partition:
         self.name = name
         self.partition = partition
         self.grid = grid
-        self.rule = None
+
+        self.valid_rule = None
+        self.finished_rule = None
 
         self.subsets = self._create_subsets(name, partition)
 
@@ -24,8 +26,8 @@ class Partition:
 
         subsets = []
 
-        for i in range(max_index):
-            subsets[i].push([])
+        for i in range(max_index + 1):
+            subsets.append([])
 
         for i in range(self.grid.m):
             for j in range(self.grid.n):
@@ -34,17 +36,36 @@ class Partition:
         
         return subsets
 
-    def set_rule(self, rule):
+    def set_valid_rule(self, rule):
 
-        self.rule = rule
+        self.valid_rule = rule
 
+    def set_finished_rule(self, rule):
+
+        self.finished_rule = rule
 
     def is_valid(self):
 
-        for i in range(len(self.subsets)):
-
-            if not(self.rule(self.subsets[i])):
+        for subset in self.subsets:
+            if not(self.is_valid_subset(subset)):
                 return False
 
         return True
 
+    def is_valid_subset(self, subset):
+
+        values = [c.value for c in subset if not c.value is None]
+        return self.valid_rule(values)
+
+    def is_finished(self):
+
+        for subset in self.subsets:
+            if not(self.is_finished_subset(subset)):
+                return False
+
+        return True
+
+    def is_finished_subset(self, subset):
+
+        values = [c.value for c in subset if not c.value is None]
+        return self.finished_rule(values)
