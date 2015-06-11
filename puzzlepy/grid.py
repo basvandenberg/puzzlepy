@@ -76,6 +76,16 @@ class Grid:
 
                 self.cells[i][j].allowed_values = values
 
+    def set_valid_values(self):
+
+        for i in range(self.m):
+            for j in range(self.n):
+                if(self.cells[i][j].value is None):
+
+                    values = []
+
+                    self.cells[i][j].valid_values = values
+
     def add_partition(self, name, partition):
 
         self.partitions[name] = Partition(name, partition, self)

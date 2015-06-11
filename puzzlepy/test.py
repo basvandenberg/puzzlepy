@@ -10,5 +10,7 @@ def main():
         print(s.partitions['row'].is_valid())
         print(s.partitions['row'].is_finished())
 
+        s.set_valid_values()
+
 if __name__ == "__main__":
     main()
