@@ -59,7 +59,8 @@ class Grid:
 
     def within_bounds(self, coord):
 
-        return coord.i > -1 and coord.i < self.m and coord.j > -1 and coord.j < self.n
+        return (coord.i > -1 and coord.i < self.m and 
+                coord.j > -1 and coord.j < self.n)
 
     def set_initial_values(self, values):
 
@@ -68,9 +69,18 @@ class Grid:
 
                 self.cells[i][j].set_initial_value(values[i][j])
 
+    def set_allowed_values(self, values):
+
+        for i in range(self.m):
+            for j in range(self.n):
+
+                self.cells[i][j].allowed_values = values
+
     def add_partition(self, name, partition):
 
         self.partitions[name] = Partition(name, partition, self)
+
+    # Sudoku specific partitions
 
     def add_row_partition(self):
 

@@ -8,6 +8,10 @@ class Cell:
 
         self.init_value = None
         self.value = None
+
+        self.allowed_values = None
+        self.valid_values = None
+
         self.marks = set()
 
         self.active = False
