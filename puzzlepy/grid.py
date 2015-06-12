@@ -17,6 +17,8 @@ class Grid:
         self._init_cells()
         self._init_neighbors()
 
+        self.allowed_values = None
+
     def _init_cells(self):
 
         for i in range(self.m):
@@ -50,6 +52,12 @@ class Grid:
 
         return result
 
+    def __iter__(self):
+
+        for i in range(self.m):
+            for j in range(self.n):
+                yield self.cells[i][j]
+
     def get_cell(self, coord):
 
         if(self.within_bounds(coord)):
@@ -69,26 +77,15 @@ class Grid:
 
                 self.cells[i][j].set_initial_value(values[i][j])
 
-    def set_allowed_values(self, values):
-
-        for i in range(self.m):
-            for j in range(self.n):
-
-                self.cells[i][j].allowed_values = values
-
-    def set_valid_values(self):
-
-        for i in range(self.m):
-            for j in range(self.n):
-                if(self.cells[i][j].value is None):
-
-                    values = []
-
-                    self.cells[i][j].valid_values = values
-
     def add_partition(self, name, partition):
 
         self.partitions[name] = Partition(name, partition, self)
+
+    def is_valid(self):
+        return all([p.is_valid() for p in self.partitions.values()])
+
+    def is_finished(self):
+        return all([p.is_finished() for p in self.partitions.values()])
 
     # Sudoku specific partitions
 

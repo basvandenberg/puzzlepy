@@ -9,9 +9,7 @@ class Cell:
         self.init_value = None
         self.value = None
 
-        self.allowed_values = None
         self.valid_values = None
-
         self.marks = set()
 
         self.active = False
@@ -26,6 +24,7 @@ class Cell:
 
     def set_value(self, value):
 
+        self.valid_values = None
         self.value = value
 
     def clear_value(self):

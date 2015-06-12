@@ -36,6 +36,9 @@ class Partition:
         
         return subsets
 
+    def __iter__(self):
+        return iter(self.subsets)
+
     def set_valid_rule(self, rule):
 
         self.valid_rule = rule
