@@ -10,6 +10,10 @@ class Coord:
 
         return Coord(self.i + coord.i, self.j + coord.j)
 
+    def __iter__(self):
+        yield self.i
+        yield self.j
+
     def __str__(self):
 
         return '(%i, %i)' % (self.i, self.j)

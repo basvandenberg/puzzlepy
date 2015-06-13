@@ -31,6 +31,10 @@ class Cell:
 
         self.value = None
 
+    def is_empty(self):
+
+        return self.value is None
+
     def set_marks(self, marks):
 
         self.marks = marks

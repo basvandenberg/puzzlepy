@@ -63,7 +63,6 @@ class Sudoku(Grid):
                         for cell in [c for c in subset if c.value is None]:
                             if(value in cell.valid_values):
 
-                                #print('set cel (%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
                                 moves.add((cell, value))
 
         print('Number of block moves: %i' % (len(moves)))
@@ -104,6 +103,57 @@ class Sudoku(Grid):
 
         return len(moves)
 
+    def backtrack(self, file_name):
+
+        self.fout = open(file_name, 'w')
+        self.counter = 0
+    
+        self._backtrack(self.get_sorted_valid_values(), 0)
+        
+        print(self.counter)
+        self.fout.close()
+    
+    def _backtrack(self, nodes, tree_depth):
+
+        #print('Backtrack tree depth: %i' % (tree_depth))
+
+        # No solution?
+        if(tree_depth >= len(nodes)):
+            print('Done backtracing.')
+            return False
+
+        cell, values = nodes[tree_depth]
+
+        for value in values:
+
+            #print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+
+            cell.set_value(value)
+
+            # Solution found.
+            if(self.is_finished()):
+                #print('Solution found!')
+                self.counter += 1
+                #print(self.counter)
+                print(self)
+                self.fout.write('\n# %010d\n%s' % (self.counter, str(self)))
+                self.fout.flush()
+                cell.set_value(None)
+                return False
+
+            # Valid grid, but not finshed yet, proceed with next tree level.
+            if(self.is_valid() and self._backtrack(nodes, tree_depth + 1)):
+                cell.set_value(None)
+                return True
+
+            # Invalid grid, skip this value
+            else:
+                pass
+
+        # No more values left to explore, done with this branch, level up.
+        cell.set_value(None)
+        return False
+
     @staticmethod
     def valid_rule(values):
         return len(set(values)) == len(values)
@@ -141,6 +191,10 @@ class Sudoku(Grid):
         sudoku.set_valid_values()
 
         return sudoku
+
+    def save_to_file(self, file_name):
+        with open(file_name, 'w') as fout:
+            fout.write(str(self))
 
 
 class SudokuSolver():

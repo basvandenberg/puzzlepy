@@ -1,8 +1,10 @@
+import sys
+
 from sudoku import Sudoku
 
-def main():
+def main(num):
 
-    with open('../data/sudoku_0001.txt', 'r') as fin:
+    with open('../data/sudoku_%04d.txt' % (num), 'r') as fin:
 
         s = Sudoku.from_file(fin)
 
@@ -15,6 +17,12 @@ def main():
             num_moves = s.apply_move_iteration()
             print(s)
 
+        s.print_sorted_valid_values()
+
+        if not(s.is_finished()):
+
+            print('Running backtracking algorithm...')
+            s.backtrack('../data/sudoku_%04d_solution.txt' % (num))
 
 if __name__ == "__main__":
-    main()
+    main(int(sys.argv[1]))

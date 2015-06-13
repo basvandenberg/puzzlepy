@@ -87,6 +87,33 @@ class Grid:
     def is_finished(self):
         return all([p.is_finished() for p in self.partitions.values()])
 
+    def empty_cells(self):
+    
+        for cell in [c for c in self if c.is_empty()]:
+            yield cell
+
+    def print_valid_values(self):
+
+        for cell in self.empty_cells():
+            i, j = cell.coord
+            print('(%i, %i): %s' % (i, j, str(cell.valid_values)))
+
+    def print_sorted_valid_values(self):
+
+        for cell, values in self.get_sorted_valid_values():
+            print('(%i, %i): %s' % (cell.coord.i, cell.coord.j, str(values)))
+
+    def get_valid_values(self):
+
+        return [(c, sorted(c.valid_values)) for c in self.empty_cells()]
+
+    def get_sorted_valid_values(self):
+
+        values = self.get_valid_values()
+        values.sort(key=lambda v: len(v[1]))
+
+        return values
+
     # Sudoku specific partitions
 
     def add_row_partition(self):
