@@ -74,10 +74,22 @@ class Grid:
 
     def set_initial_values(self, values):
 
-        for i in range(self.m):
-            for j in range(self.n):
+        for cell in self:
+            cell.set_initial_value(values[cell.coord.i][cell.coord.j])
 
-                self.cells[i][j].set_initial_value(values[i][j])
+    def get_values(self):
+
+        values = []
+
+        for i in range(self.m):
+            row = []
+
+            for j in range(self.n):
+                row.append(self.cells[i][j].value)
+
+            values.append(row)
+
+        return values
 
     def add_partition(self, name, partition):
 

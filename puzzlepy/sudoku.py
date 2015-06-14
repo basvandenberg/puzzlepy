@@ -1,6 +1,5 @@
 import copy
-import multiprocessing
-import time
+import random
 
 from grid import Grid
 
@@ -100,6 +99,14 @@ class Sudoku(Grid):
     @staticmethod
     def allowed_values():
         return set(range(1, 10))
+
+    @staticmethod
+    def shuffled_coordinates():
+
+        coords = [(i, j) for i in range(9) for j in range(9)]
+        random.shuffle(coords)
+
+        return coords
 
     @classmethod
     def load(cls, file):
@@ -203,7 +210,7 @@ class SudokuSolver():
         else:
             level = 0
 
-        print(tmp[level])
+        #print(tmp[level])
 
         return level
 
@@ -299,11 +306,62 @@ class SudokuSolver():
 
 class SudokuGenerator():
 
-    def generateSudoku(self):
-        pass
+    @staticmethod
+    def generate():
+        
+        solution = SudokuGenerator.random_solution()
+        shuffled_coords = Sudoku.shuffled_coordinates()
+        values = solution.get_values()
+        print(values)
+
+        num_solutions = 1
+        index = 0
+
+        while(num_solutions < 2):
+            
+            # Randomly remove value from solution.
+            row, col = shuffled_coords[index]
+            values[row][col] = None
+
+            # Initialize sudoko with these values.
+            s = Sudoku()
+            s.set_initial_values(values)
+            s.set_valid_values()
+
+            solver = SudokuSolver(s)
+
+            # Count number of solutions.
+            solutions = solver.backtrack('sorted', multiple_solutions=True)
+
+            num_solutions = len(solutions)
+
+            # Initialize sudoko with these values.
+            s = Sudoku()
+            s.set_initial_values(values)
+            s.set_valid_values()
+            
+            solver = SudokuSolver(s)
+
+            if(len(solutions) == 1):
+
+                # Evaluate solution
+                level = solver.evaluate_difficulty()
+
+                s = Sudoku()
+                s.set_initial_values(values)
+                s.set_valid_values()
+                last = s
+
+                print(level)
+
+            index += 1
+
+        sudoku = copy.deepcopy(solution)
+
+        return (last, solution)
 
     @staticmethod
-    def random_finished():
+    def random_solution():
 
         sudoku = Sudoku.empty_sudoku()
         #sudoku.file_in = '../data/random.txt'
@@ -312,6 +370,6 @@ class SudokuGenerator():
         solver = SudokuSolver(sudoku)
         solution = solver.backtrack('random')[0]
 
-        print(str(solution))
+        #print(str(solution))
         
         return solution
