@@ -1,3 +1,7 @@
+import copy
+import multiprocessing
+import time
+
 from grid import Grid
 
 class Sudoku(Grid):
@@ -65,9 +69,9 @@ class Sudoku(Grid):
 
                                 moves.add((cell, value))
 
-        print('Number of block moves: %i' % (len(moves)))
-        for cell, value in moves:
-            print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+        #print('Number of block moves: %i' % (len(moves)))
+        #for cell, value in moves:
+        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
         return moves
 
@@ -79,39 +83,170 @@ class Sudoku(Grid):
             if(len(cell.valid_values) == 1):
                 moves.add((cell, list(cell.valid_values)[0]))
 
-        print('Number of position moves: %i' % (len(moves)))
-        for cell, value in moves:
-            print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+        #print('Number of position moves: %i' % (len(moves)))
+        #for cell, value in moves:
+        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
         return moves
 
+    @staticmethod
+    def valid_rule(values):
+        return len(set(values)) == len(values)
+
+    @staticmethod
+    def finished_rule(values):
+        return len(Sudoku.allowed_values().difference(set(values))) == 0
+
+    @staticmethod
+    def allowed_values():
+        return set(range(1, 10))
+
+    @classmethod
+    def load(cls, file):
+
+        # Read sudoku initial values from file
+        init_values = []
+
+        with open(file, 'r') as fin:
+
+            for line in fin:
+                row = []
+
+                for num in line.split(' '):
+
+                    if(num.strip() == '.'):
+                        row.append(None)
+
+                    else:
+                        row.append(int(num))
+
+                init_values.append(row)
+
+        # Initialize sudoku and set initial values.
+        sudoku = cls()
+        sudoku.set_initial_values(init_values)
+        sudoku.set_valid_values()
+
+        # Store file name (used for saving).
+        sudoku.file_in = file
+        sudoku.file_out = file[:-4] + '_solution.txt'
+
+        return sudoku
+
+    @classmethod
+    def empty_sudoku(cls):
+
+        sudoku = cls()
+        sudoku.set_initial_values([[None for i in range(9)] for j in range(9)])
+        sudoku.set_valid_values()
+
+        return sudoku
+
+    def save(self):
+
+        with open(self.file_out, 'w') as fout:
+            fout.write(str(self))
+
+
+class SudokuSolver():
+
+    def __init__(self, sudoku):
+
+        self.sudoku = sudoku
+
+    def solve(self, multiple_solutions=False):
+
+        num_iterations = 0
+        backtraced = False
+        
+        num_moves = 1
+
+        while(num_moves > 0 and not self.sudoku.is_finished()):
+
+            num_moves = self.apply_move_iteration()
+
+            if(num_moves > 0):
+                num_iterations += 1
+
+            #print(self.sudoku)
+
+        #self.sudoku.print_sorted_valid_values()
+
+        if not(self.sudoku.is_finished()):
+
+            #print('Running backtracking algorithm...')
+            backtraced = True
+            self.backtrack('sorted', multiple_solutions)
+
+        return (num_iterations, backtraced)
+
+    def evaluate_difficulty(self):
+
+        tmp = {
+            0: 'Mild',
+            1: 'Difficult',
+            2: 'Fiendish',
+            3: 'Super Fiendish'    
+        }
+
+        num_iter, backtraced = self.solve()
+
+        #print(num_iter)
+        #print(backtraced)
+
+        if(backtraced):
+            level = 3
+        elif(num_iter > 12):
+            level = 2
+        elif(num_iter > 5):
+            level = 1
+        else:
+            level = 0
+
+        print(tmp[level])
+
+        return level
+
     def apply_move_iteration(self):
 
-        block_moves = self.get_block_moves()
-        position_moves = self.get_position_moves()
+        block_moves = self.sudoku.get_block_moves()
+        position_moves = self.sudoku.get_position_moves()
 
         moves = block_moves.union(position_moves)
 
-        print('Number of moves: %i' % (len(moves)))
-        for cell, value in moves:
-            print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+        #print('Number of moves: %i' % (len(moves)))
+        #for cell, value in moves:
+        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
         for cell, value in moves:
             cell.set_value(value)
 
-        self.set_valid_values()
+        self.sudoku.set_valid_values()
 
         return len(moves)
 
-    def backtrack(self, file_name):
+    def backtrack(self, type, multiple_solutions=False):
 
-        self.fout = open(file_name, 'w')
-        self.counter = 0
+        #self.fout = open(self.sudoku.file_out, 'w')
+        #self.counter = 0
+
+        self._solutions = []
+        self.multiple_solutions = multiple_solutions
+
+        if(type == 'random'):
+            nodes = self.sudoku.get_shuffled_valid_values()
+
+        elif(type == 'sorted'):
+            nodes = self.sudoku.get_sorted_valid_values()
+
+        else:
+            nodes = self.sudoku.get_valid_values()
     
-        self._backtrack(self.get_sorted_valid_values(), 0)
+        self._backtrack(nodes, 0)
         
-        print(self.counter)
-        self.fout.close()
+        #print(self.counter)
+        #self.fout.close()
+        return self._solutions
     
     def _backtrack(self, nodes, tree_depth):
 
@@ -131,19 +266,27 @@ class Sudoku(Grid):
             cell.set_value(value)
 
             # Solution found.
-            if(self.is_finished()):
+            if(self.sudoku.is_finished()):
                 #print('Solution found!')
-                self.counter += 1
+                #self.counter += 1
                 #print(self.counter)
-                print(self)
-                self.fout.write('\n# %010d\n%s' % (self.counter, str(self)))
-                self.fout.flush()
-                cell.set_value(None)
-                return False
+                #print(self.sudoku)
+                #self.fout.write('\n# %010d\n' % (self.counter))
+                #self.fout.write('%s' % (str(self.sudoku)))
+                #self.fout.flush()
+
+                self._solutions.append(copy.deepcopy(self.sudoku))
+
+                if(self.multiple_solutions):
+                    cell.set_value(None)
+                    return False
+                else:
+                    return True
 
             # Valid grid, but not finshed yet, proceed with next tree level.
-            if(self.is_valid() and self._backtrack(nodes, tree_depth + 1)):
-                cell.set_value(None)
+            if(self.sudoku.is_valid() and self._backtrack(nodes, tree_depth + 1)):
+                if(self.multiple_solutions):
+                    cell.set_value(None)
                 return True
 
             # Invalid grid, skip this value
@@ -154,57 +297,21 @@ class Sudoku(Grid):
         cell.set_value(None)
         return False
 
-    @staticmethod
-    def valid_rule(values):
-        return len(set(values)) == len(values)
+class SudokuGenerator():
 
-    @staticmethod
-    def finished_rule(values):
-        return len(Sudoku.allowed_values().difference(set(values))) == 0
-
-    @staticmethod
-    def allowed_values():
-        return set(range(1, 10))
-
-    @classmethod
-    def from_file(cls, file):
-
-        # Read sudoku initial values from file
-        init_values = []
-
-        for line in file:
-            row = []
-
-            for num in line.split(' '):
-
-                if(num.strip() == '.'):
-                    row.append(None)
-
-                else:
-                    row.append(int(num))
-
-            init_values.append(row)
-
-        # Initialize sudoku and set initial values.
-        sudoku = cls()
-        sudoku.set_initial_values(init_values)
-        sudoku.set_valid_values()
-
-        return sudoku
-
-    def save_to_file(self, file_name):
-        with open(file_name, 'w') as fout:
-            fout.write(str(self))
-
-
-class SudokuSolver():
-
-    def __init__(self, sudoku):
-
-        self.sudoku = sudoku
-
-    def solve(self):
-
+    def generateSudoku(self):
         pass
 
+    @staticmethod
+    def random_finished():
 
+        sudoku = Sudoku.empty_sudoku()
+        #sudoku.file_in = '../data/random.txt'
+        sudoku.file_out = '../data/random_solution.txt'
+
+        solver = SudokuSolver(sudoku)
+        solution = solver.backtrack('random')[0]
+
+        print(str(solution))
+        
+        return solution

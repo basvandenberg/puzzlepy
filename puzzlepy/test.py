@@ -1,28 +1,16 @@
 import sys
 
-from sudoku import Sudoku
+from sudoku import Sudoku, SudokuSolver, SudokuGenerator
 
 def main(num):
 
-    with open('../data/sudoku_%04d.txt' % (num), 'r') as fin:
+    file = '../data/sudoku_%04d.txt' % (num)
 
-        s = Sudoku.from_file(fin)
+    sudoku = Sudoku.load(file)
+    solver = SudokuSolver(sudoku)
+    solver.evaluate_difficulty()
 
-        print(s)
-
-        num_moves = 1
-        
-        while(num_moves > 0 and not s.is_finished()):
-
-            num_moves = s.apply_move_iteration()
-            print(s)
-
-        s.print_sorted_valid_values()
-
-        if not(s.is_finished()):
-
-            print('Running backtracking algorithm...')
-            s.backtrack('../data/sudoku_%04d_solution.txt' % (num))
+    #SudokuGenerator.random_finished()
 
 if __name__ == "__main__":
     main(int(sys.argv[1]))

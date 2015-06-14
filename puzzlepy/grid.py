@@ -1,3 +1,5 @@
+import random
+
 import coord
 
 from coord import Coord
@@ -111,6 +113,14 @@ class Grid:
 
         values = self.get_valid_values()
         values.sort(key=lambda v: len(v[1]))
+
+        return values
+
+    def get_shuffled_valid_values(self):
+
+        values = self.get_valid_values()
+        for _, v in values:
+            random.shuffle(v)
 
         return values
 
