@@ -148,7 +148,7 @@ class Sudoku(Grid):
         # Read sudoku initial values from file
         init_values = []
 
-        for line in str.split('\n'):
+        for line in [l for l in str.split('\n') if not l.strip() == '']:
             row = []
 
             for num in line.split(' '):
@@ -402,7 +402,7 @@ class SudokuGenerator():
             solution = SudokuGenerator.random_solution()
 
             for cell in pattern_sudoku:
-                if(cell.value == 0):
+                if(cell.value is None):
                     solution.cells[cell.coord.i][cell.coord.j].clear_value()
 
             solution.set_valid_values()
