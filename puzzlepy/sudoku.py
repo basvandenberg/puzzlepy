@@ -114,6 +114,8 @@ class Sudoku(Grid):
         # Read sudoku initial values from file
         init_values = []
 
+        # TODO read string and call from_string if possible.
+
         with open(file, 'r') as fin:
 
             for line in fin:
@@ -137,6 +139,32 @@ class Sudoku(Grid):
         # Store file name (used for saving).
         sudoku.file_in = file
         sudoku.file_out = file[:-4] + '_solution.txt'
+
+        return sudoku
+
+    @classmethod
+    def from_string(cls, str):
+
+        # Read sudoku initial values from file
+        init_values = []
+
+        for line in str.split('\n'):
+            row = []
+
+            for num in line.split(' '):
+
+                if(num.strip() == '.'):
+                    row.append(None)
+
+                else:
+                    row.append(int(num))
+
+            init_values.append(row)
+
+        # Initialize sudoku and set initial values.
+        sudoku = cls()
+        sudoku.set_initial_values(init_values)
+        sudoku.set_valid_values()
 
         return sudoku
 
@@ -190,6 +218,7 @@ class SudokuSolver():
     def evaluate_difficulty(self):
 
         tmp = {
+            -1: 'To easy',
             0: 'Mild',
             1: 'Difficult',
             2: 'Fiendish',
@@ -207,8 +236,10 @@ class SudokuSolver():
             level = 2
         elif(num_iter > 5):
             level = 1
-        else:
+        elif(num_iter > 4):
             level = 0
+        else:
+            level = -1
 
         #print(tmp[level])
 
@@ -312,7 +343,6 @@ class SudokuGenerator():
         solution = SudokuGenerator.random_solution()
         shuffled_coords = Sudoku.shuffled_coordinates()
         values = solution.get_values()
-        print(values)
 
         num_solutions = 1
         index = 0
@@ -352,13 +382,38 @@ class SudokuGenerator():
                 s.set_valid_values()
                 last = s
 
-                print(level)
-
             index += 1
 
         sudoku = copy.deepcopy(solution)
 
-        return (last, solution)
+        return (last, solution, level)
+
+    @staticmethod
+    def generate_from_pattern(pattern):
+        
+        found = False
+        num_tries = 0
+        max_tries = 100
+
+        pattern_sudoku = Sudoku.from_string(pattern)
+
+        while(not found and num_tries < max_tries):
+
+            solution = SudokuGenerator.random_solution()
+
+            for cell in pattern_sudoku:
+                if(cell.value == 0):
+                    solution.cells[cell.coord.i][cell.coord.j].clear_value()
+
+            solution.set_valid_values()
+
+            solver = SudokuSolver(copy.deepcopy(solution))
+            level = solver.evaluate_difficulty()
+
+            print('\n%i:' % (level))
+            print(solution)
+
+            num_tries += 1
 
     @staticmethod
     def random_solution():
