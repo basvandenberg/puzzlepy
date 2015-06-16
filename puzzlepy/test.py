@@ -1,6 +1,6 @@
 import sys
 
-from sudoku import Sudoku, SudokuSolver, SudokuGenerator
+from sudoku import Sudoku, SudokuSolver, SudokuGenerator, SudokuPatternGenerator
 
 def main(num):
 
@@ -46,7 +46,20 @@ def main(num):
 0 0 0 0 0 0 0 0 0
 '''
 
-    SudokuGenerator.generate_from_pattern(pattern)   
+    #block_pattern = SudokuPatternGenerator.random_block_pattern(3)
+    #print(SudokuPatternGenerator.to_string(block_pattern))
+
+    #rotated = SudokuPatternGenerator.rotated_block(block_pattern)
+    #print(SudokuPatternGenerator.to_string(rotated))
+
+    #row = SudokuPatternGenerator.random_block_row_pattern(4, 3)
+    #print(SudokuPatternGenerator.to_string(row))
+
+    grid = SudokuPatternGenerator.random_grid(5, 2, 3, 3)
+    pattern = SudokuPatternGenerator.to_string(grid)
+    print(pattern)
+
+    SudokuGenerator.generate_from_pattern(pattern)
 
 if __name__ == "__main__":
     main(int(sys.argv[1]))

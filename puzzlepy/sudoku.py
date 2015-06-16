@@ -1,7 +1,56 @@
 import copy
+import itertools
+import multiprocessing
 import random
+import time
 
 from grid import Grid
+
+class TimeoutException(Exception):
+    pass
+
+
+class RunableProcessing(multiprocessing.Process):
+    def __init__(self, func, *args, **kwargs):
+        self.queue = multiprocessing.Queue(maxsize=1)
+        args = (func,) + args
+        multiprocessing.Process.__init__(self, target=self.run_func, args=args, kwargs=kwargs)
+
+    def run_func(self, func, *args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            self.queue.put((True, result))
+        except Exception as e:
+            self.queue.put((False, e))
+
+    def done(self):
+        return self.queue.full()
+
+    def result(self):
+        return self.queue.get()
+
+
+def timeout(seconds, force_kill=True):
+    def wrapper(function):
+        def inner(*args, **kwargs):
+            now = time.time()
+            proc = RunableProcessing(function, *args, **kwargs)
+            proc.start()
+            proc.join(seconds)
+            if proc.is_alive():
+                if force_kill:
+                    proc.terminate()
+                runtime = int(time.time() - now)
+                raise TimeoutException('timed out after {0} seconds'.format(runtime))
+            assert proc.done()
+            success, result = proc.result()
+            if success:
+                return result
+            else:
+                raise result
+        return inner
+    return wrapper
+
 
 class Sudoku(Grid):
 
@@ -215,6 +264,7 @@ class SudokuSolver():
 
         return (num_iterations, backtraced)
 
+    @timeout(3)
     def evaluate_difficulty(self):
 
         tmp = {
@@ -232,9 +282,9 @@ class SudokuSolver():
 
         if(backtraced):
             level = 3
-        elif(num_iter > 12):
+        elif(num_iter > 8):
             level = 2
-        elif(num_iter > 5):
+        elif(num_iter > 6):
             level = 1
         elif(num_iter > 4):
             level = 0
@@ -391,13 +441,11 @@ class SudokuGenerator():
     @staticmethod
     def generate_from_pattern(pattern):
         
-        found = False
-        num_tries = 0
-        max_tries = 100
+        num_tries = 4
 
         pattern_sudoku = Sudoku.from_string(pattern)
 
-        while(not found and num_tries < max_tries):
+        for i in range(num_tries):
 
             solution = SudokuGenerator.random_solution()
 
@@ -408,12 +456,16 @@ class SudokuGenerator():
             solution.set_valid_values()
 
             solver = SudokuSolver(copy.deepcopy(solution))
-            level = solver.evaluate_difficulty()
+
+            try:
+                level = solver.evaluate_difficulty()
+
+            except(TimeoutException):
+                print('Timeout.')
+                level = 4
 
             print('\n%i:' % (level))
             print(solution)
-
-            num_tries += 1
 
     @staticmethod
     def random_solution():
@@ -428,3 +480,105 @@ class SudokuGenerator():
         #print(str(solution))
         
         return solution
+
+class SudokuPatternGenerator():
+
+    @staticmethod
+    def random_block_pattern(num_filled):
+
+        fill_indices = random.sample(range(9), num_filled)
+        pattern = []
+
+        for rowi in range(3):
+            row = []
+            for coli in range(3):
+
+                if((rowi * 3 + coli) in fill_indices):
+                    row.append('0')
+                else:
+                    row.append('.')
+
+            pattern.append(row)
+
+        return pattern
+    
+    @staticmethod
+    def rotated_block(block):
+
+        rotated = copy.deepcopy(block)
+
+        rotated.reverse()
+        for row in rotated:
+            row.reverse()
+
+        return rotated
+
+    @staticmethod
+    def vmirrored_block(block):
+
+        mirrored = copy.deepcopy(block)
+
+        for row in mirrored:
+            row.reverse()
+
+        return mirrored
+
+    @staticmethod
+    def hconcat(blocks):
+
+        concat = []
+
+        for row_i in range(len(blocks[0])):
+
+            rows = [block[row_i] for block in blocks]
+            row = list(itertools.chain.from_iterable(rows))
+
+            concat.append(row)
+        
+        return concat
+
+    @staticmethod
+    def vconcat(blocks):
+
+        concat = []
+
+        for block in blocks:
+            for row in block:
+                concat.append(copy.copy(row))
+        
+        return concat
+
+    @staticmethod
+    def random_block_row_pattern(num_filled_side, num_filled_center):
+        
+        left = SudokuPatternGenerator.random_block_pattern(num_filled_side)
+        right = SudokuPatternGenerator.vmirrored_block(left)
+        center = SudokuPatternGenerator.random_block_pattern(num_filled_center)
+
+        row = SudokuPatternGenerator.hconcat([left, center, right])
+
+        return row
+
+    @staticmethod
+    def random_grid(corner, hcenter, vcenter, center):
+
+        top = SudokuPatternGenerator.random_block_row_pattern(corner, hcenter)
+        bottom = SudokuPatternGenerator.rotated_block(top)
+        middle = SudokuPatternGenerator.random_block_row_pattern(vcenter, center)
+
+        grid = SudokuPatternGenerator.vconcat([top, middle, bottom])
+
+        return grid
+
+    @staticmethod
+    def to_string(field):
+
+        s = ''
+        for row in field:
+            s += '%s\n' % (' '.join(row))
+
+        return s
+
+
+
+
