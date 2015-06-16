@@ -6,6 +6,7 @@ import time
 
 from grid import Grid
 
+
 class TimeoutException(Exception):
     pass
 
@@ -117,7 +118,7 @@ class Sudoku(Grid):
 
                                 moves.add((cell, value))
 
-        #print('Number of block moves: %i' % (len(moves)))
+        print('Number of block moves: %i' % (len(moves)))
         #for cell, value in moves:
         #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
@@ -131,7 +132,7 @@ class Sudoku(Grid):
             if(len(cell.valid_values) == 1):
                 moves.add((cell, list(cell.valid_values)[0]))
 
-        #print('Number of position moves: %i' % (len(moves)))
+        print('Number of position moves: %i' % (len(moves)))
         #for cell, value in moves:
         #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
@@ -238,7 +239,7 @@ class SudokuSolver():
 
         self.sudoku = sudoku
 
-    def solve(self, multiple_solutions=False):
+    def solve(self, backtrack=True, multiple_solutions=False):
 
         num_iterations = 0
         backtraced = False
@@ -258,14 +259,15 @@ class SudokuSolver():
 
         if not(self.sudoku.is_finished()):
 
-            #print('Running backtracking algorithm...')
             backtraced = True
-            self.backtrack('sorted', multiple_solutions)
+            if(backtrack):
+                print('Running backtracking algorithm...')
+                self.backtrack('sorted', multiple_solutions)
 
         return (num_iterations, backtraced)
 
-    @timeout(3)
-    def evaluate_difficulty(self):
+    @timeout(1)
+    def evaluate_difficulty(self, backtrack=True):
 
         tmp = {
             -1: 'To easy',
@@ -275,17 +277,24 @@ class SudokuSolver():
             3: 'Super Fiendish'    
         }
 
-        num_iter, backtraced = self.solve()
+        num_iter, backtraced = self.solve(backtrack=backtrack)
 
-        #print(num_iter)
-        #print(backtraced)
+        print(num_iter)
+        print(backtraced)
 
+        # level 3: extra fiendish, backtracking
         if(backtraced):
             level = 3
+
+        # level 2: fiendish, 15+
         elif(num_iter > 8):
             level = 2
+
+        # level 1: difficult, 7-14 iteraties
         elif(num_iter > 6):
             level = 1
+
+        # level 0: mild, 5-6 iteraties
         elif(num_iter > 4):
             level = 0
         else:
@@ -434,15 +443,14 @@ class SudokuGenerator():
 
             index += 1
 
+        # why did I do this??
         sudoku = copy.deepcopy(solution)
 
         return (last, solution, level)
 
     @staticmethod
-    def generate_from_pattern(pattern):
+    def generate_from_pattern(pattern, num_tries, outdir, backtrack=True):
         
-        num_tries = 4
-
         pattern_sudoku = Sudoku.from_string(pattern)
 
         for i in range(num_tries):
@@ -458,7 +466,7 @@ class SudokuGenerator():
             solver = SudokuSolver(copy.deepcopy(solution))
 
             try:
-                level = solver.evaluate_difficulty()
+                level = solver.evaluate_difficulty(backtrack=backtrack)
 
             except(TimeoutException):
                 print('Timeout.')
@@ -466,6 +474,10 @@ class SudokuGenerator():
 
             print('\n%i:' % (level))
             print(solution)
+
+            with open('%s/level%i.txt' % (outdir, level), 'a+') as fout:
+                fout.write('%s\n' % (solution))
+
 
     @staticmethod
     def random_solution():
@@ -480,6 +492,32 @@ class SudokuGenerator():
         #print(str(solution))
         
         return solution
+
+RANDOM_SYMETRIC_BLOCKS = [
+
+    [['.', '.', '.'], ['.', '.', '.'], ['.', '.', '.']],
+    [['.', '.', '.'], ['.', '0', '.'], ['.', '.', '.']],
+    [['.', '.', '.'], ['0', '.', '0'], ['.', '.', '.']],
+    [['.', '0', '.'], ['.', '.', '.'], ['.', '0', '.']],
+    [['0', '.', '.'], ['.', '.', '.'], ['.', '.', '0']],
+    [['.', '.', '0'], ['.', '.', '.'], ['0', '.', '.']],
+    [['.', '0', '.'], ['.', '0', '.'], ['.', '0', '.']],
+    [['.', '.', '0'], ['.', '0', '.'], ['0', '.', '.']],
+    [['.', '.', '.'], ['0', '0', '0'], ['.', '.', '.']],
+    [['0', '.', '.'], ['.', '0', '.'], ['.', '.', '0']],
+    [['0', '.', '0'], ['.', '.', '.'], ['0', '.', '0']],
+    [['.', '0', '.'], ['0', '.', '0'], ['.', '0', '.']],
+    [['0', '0', '.'], ['.', '.', '.'], ['.', '0', '0']],
+    [['.', '.', '0'], ['0', '.', '0'], ['0', '.', '.']],
+    [['.', '0', '0'], ['.', '.', '.'], ['0', '0', '.']],
+    [['0', '.', '.'], ['0', '.', '0'], ['.', '.', '0']],
+    [['0', '.', '0'], ['.', '0', '.'], ['0', '.', '0']],
+    [['.', '0', '.'], ['0', '0', '0'], ['.', '0', '.']],
+    [['0', '0', '.'], ['.', '0', '.'], ['.', '0', '0']],
+    [['.', '.', '0'], ['0', '0', '0'], ['0', '.', '.']],
+    [['.', '0', '0'], ['.', '0', '.'], ['0', '0', '.']],
+    [['0', '.', '.'], ['0', '0', '0'], ['.', '.', '0']]
+]
 
 class SudokuPatternGenerator():
 
@@ -560,11 +598,28 @@ class SudokuPatternGenerator():
         return row
 
     @staticmethod
-    def random_grid(corner, hcenter, vcenter, center):
+    def random_grid():
 
-        top = SudokuPatternGenerator.random_block_row_pattern(corner, hcenter)
-        bottom = SudokuPatternGenerator.rotated_block(top)
-        middle = SudokuPatternGenerator.random_block_row_pattern(vcenter, center)
+        edge = random.randint(2, 5)
+        center = random.randint(0, 5)
+
+        top_left = SudokuPatternGenerator.random_block_pattern(edge)
+        bottom_right = SudokuPatternGenerator.rotated_block(top_left)
+
+        top_right = SudokuPatternGenerator.random_block_pattern(edge)
+        bottom_left = SudokuPatternGenerator.rotated_block(top_right)
+
+        top_center = SudokuPatternGenerator.random_block_pattern(edge)
+        bottom_center = SudokuPatternGenerator.rotated_block(top_center)
+
+        left_center = SudokuPatternGenerator.random_block_pattern(edge)
+        right_center = SudokuPatternGenerator.rotated_block(left_center)
+
+        center = RANDOM_SYMETRIC_BLOCKS[random.randint(0, len(RANDOM_SYMETRIC_BLOCKS) - 1)]
+
+        top = SudokuPatternGenerator.hconcat([top_left, top_center, top_right])
+        middle = SudokuPatternGenerator.hconcat([left_center, center, right_center])
+        bottom = SudokuPatternGenerator.hconcat([bottom_left, bottom_center, bottom_right])
 
         grid = SudokuPatternGenerator.vconcat([top, middle, bottom])
 
@@ -578,7 +633,4 @@ class SudokuPatternGenerator():
             s += '%s\n' % (' '.join(row))
 
         return s
-
-
-
 
