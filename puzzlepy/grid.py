@@ -136,6 +136,13 @@ class Grid:
 
         return values
 
+    def shuffled_coordinates():
+
+        coords = [(i, j) for i in range(self.m) for j in range(self.n)]
+        random.shuffle(coords)
+
+        return coords
+
     # Sudoku specific partitions
 
     def add_row_partition(self):

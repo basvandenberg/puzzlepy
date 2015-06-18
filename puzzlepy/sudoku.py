@@ -73,6 +73,11 @@ class Sudoku(Grid):
 
         self.allowed_values = Sudoku.allowed_values()
 
+    def set_initial_values(self, values):
+
+        super().set_initial_values(values)
+        self.set_valid_values()
+
     def set_valid_values(self):
 
         for cell in [c for c in self if c.value is None]:
@@ -150,45 +155,12 @@ class Sudoku(Grid):
     def allowed_values():
         return set(range(1, 10))
 
-    @staticmethod
-    def shuffled_coordinates():
-
-        coords = [(i, j) for i in range(9) for j in range(9)]
-        random.shuffle(coords)
-
-        return coords
-
     @classmethod
-    def load(cls, file):
+    def empty_sudoku(cls):
 
-        # Read sudoku initial values from file
-        init_values = []
-
-        # TODO read string and call from_string if possible.
-
-        with open(file, 'r') as fin:
-
-            for line in fin:
-                row = []
-
-                for num in line.split(' '):
-
-                    if(num.strip() == '.'):
-                        row.append(None)
-
-                    else:
-                        row.append(int(num))
-
-                init_values.append(row)
-
-        # Initialize sudoku and set initial values.
         sudoku = cls()
-        sudoku.set_initial_values(init_values)
+        sudoku.set_initial_values([[None for i in range(9)] for j in range(9)])
         sudoku.set_valid_values()
-
-        # Store file name (used for saving).
-        sudoku.file_in = file
-        sudoku.file_out = file[:-4] + '_solution.txt'
 
         return sudoku
 
@@ -219,18 +191,54 @@ class Sudoku(Grid):
         return sudoku
 
     @classmethod
-    def empty_sudoku(cls):
+    def load(cls, file_name):
 
-        sudoku = cls()
-        sudoku.set_initial_values([[None for i in range(9)] for j in range(9)])
-        sudoku.set_valid_values()
+        sudokus = []
 
-        return sudoku
+        with open(file_name, 'r') as fin:
+            rows = []
 
-    def save(self):
+            for line in [l.strip() for l in fin]:
 
-        with open(self.file_out, 'w') as fout:
-            fout.write(str(self))
+                # Start reading new grid.
+                if(line == ''):
+
+                    # Create sudo if we have enough lines.
+                    if(len(rows) == 9):
+
+                        # Initialize sudoku and set initial values.
+                        sudoku = cls()
+                        sudoku.set_initial_values(rows)
+                        sudokus.append(sudoku)
+
+                    rows = []
+
+                # Append this line to rows.
+                else:
+                    row = []
+                    for num in line.split(' '):
+                        if(num.strip() == '.'):
+                            row.append(None)
+                        else:
+                            row.append(int(num))
+                    rows.append(row)
+
+            if(len(rows) == 9):
+
+                # Initialize sudoku and set initial values.
+                sudoku = cls()
+                sudoku.set_initial_values(rows)
+                sudokus.append(sudoku)
+
+        return sudokus
+
+    @staticmethod
+    def save(file_name, sudokus):
+
+        with open(file_name, 'w') as fout:
+
+            for sudoku in sudokus:
+                fout.write('%s\n\n' % (str(sudoku)))
 
 
 class SudokuSolver():
@@ -400,7 +408,7 @@ class SudokuGenerator():
     def generate():
         
         solution = SudokuGenerator.random_solution()
-        shuffled_coords = Sudoku.shuffled_coordinates()
+        shuffled_coords = solution.shuffled_coordinates()
         values = solution.get_values()
 
         num_solutions = 1
@@ -449,6 +457,12 @@ class SudokuGenerator():
         return (last, solution, level)
 
     @staticmethod
+    def generate1():
+
+        solution = SudokuGenerator.random_solution()
+
+
+    @staticmethod
     def generate_from_pattern(pattern, num_tries, outdir, backtrack=True):
         
         pattern_sudoku = Sudoku.from_string(pattern)
@@ -478,7 +492,6 @@ class SudokuGenerator():
             with open('%s/level%i.txt' % (outdir, level), 'a+') as fout:
                 fout.write('%s\n' % (solution))
 
-
     @staticmethod
     def random_solution():
 
@@ -492,6 +505,10 @@ class SudokuGenerator():
         #print(str(solution))
         
         return solution
+
+
+
+
 
 RANDOM_SYMETRIC_BLOCKS = [
 
@@ -518,6 +535,7 @@ RANDOM_SYMETRIC_BLOCKS = [
     [['.', '0', '0'], ['.', '0', '.'], ['0', '0', '.']],
     [['0', '.', '.'], ['0', '0', '0'], ['.', '.', '0']]
 ]
+
 
 class SudokuPatternGenerator():
 
