@@ -1,5 +1,6 @@
 import copy
 import itertools
+import json
 import multiprocessing
 import random
 import time
@@ -143,6 +144,16 @@ class Sudoku(Grid):
 
         return moves
 
+    def to_json_string(self):
+
+        rows = []
+        for row in self.cells:
+            s = [str(c.value) if not c.value is None else 'null' for c in row]
+            print(s)
+            rows.append('    [%s]' % (', '.join(s)))
+
+        return '[\n%s\n]' % (',\n'.join(rows))
+
     @staticmethod
     def valid_rule(values):
         return len(set(values)) == len(values)
@@ -165,23 +176,13 @@ class Sudoku(Grid):
         return sudoku
 
     @classmethod
-    def from_string(cls, str):
+    def from_string(cls, s):
 
-        # Read sudoku initial values from file
         init_values = []
 
-        for line in [l for l in str.split('\n') if not l.strip() == '']:
-            row = []
-
-            for num in line.split(' '):
-
-                if(num.strip() == '.'):
-                    row.append(None)
-
-                else:
-                    row.append(int(num))
-
-            init_values.append(row)
+        # Parse sudoku string.
+        for line in [l for l in s.split('\n') if not l.strip() == '']:
+            init_values.append(Sudoku.row_from_string(line))
 
         # Initialize sudoku and set initial values.
         sudoku = cls()
@@ -189,6 +190,19 @@ class Sudoku(Grid):
         sudoku.set_valid_values()
 
         return sudoku
+
+    @staticmethod
+    def row_from_string(s):
+
+        row = []
+
+        for num in s.split(' '):
+            if(num.strip() == '.'):
+                row.append(None)
+            else:
+                row.append(int(num))
+
+        return row
 
     @classmethod
     def load(cls, file_name):
@@ -215,13 +229,7 @@ class Sudoku(Grid):
 
                 # Append this line to rows.
                 else:
-                    row = []
-                    for num in line.split(' '):
-                        if(num.strip() == '.'):
-                            row.append(None)
-                        else:
-                            row.append(int(num))
-                    rows.append(row)
+                    rows.append(Sudoku.row_from_string(line))
 
             if(len(rows) == 9):
 
@@ -295,16 +303,15 @@ class SudokuSolver():
             level = 3
 
         # level 2: fiendish, 15+
-        elif(len(iterations) > 8 &&
-                (max(iterations) < 8 && iterations[0] < 5)):
+        elif(len(iterations) > 8 and iterations[0] < 5):
             level = 2
 
         # level 1: difficult, 7-14 iteraties
-        elif(len(iterations) > 6):
+        elif(len(iterations) > 6 and iterations[0] < 7):
             level = 1
 
         # level 0: mild, 5-6 iteraties
-        elif(len(iterations) > 4):
+        elif(len(iterations) > 4 and iterations[0] < 9):
             level = 0
         else:
             level = -1
@@ -457,11 +464,17 @@ class SudokuGenerator():
 
         return (last, solution, level)
 
-    @staticmethod
-    def generate1():
+    def backtrack_generate():
 
-        solution = SudokuGenerator.random_solution()
+        cells = SudokuGenerator.random_solution().cells
+        nodes = [cells[i][j] for (i, j) in solution.shuffled_coordinates()]
 
+        self._backtrack(nodes, 0)
+
+    def _backtrack(nodes, tree_level):
+
+        # TODO
+        pass
 
     @staticmethod
     def generate_from_pattern(pattern, num_tries, outdir, backtrack=True):
@@ -619,19 +632,20 @@ class SudokuPatternGenerator():
     @staticmethod
     def random_grid():
 
-        edge = random.randint(2, 5)
+        corner = random.randint(1, 5)
+        center_edge = random.randint(1, 5)
         center = random.randint(0, 5)
 
-        top_left = SudokuPatternGenerator.random_block_pattern(edge)
+        top_left = SudokuPatternGenerator.random_block_pattern(corner)
         bottom_right = SudokuPatternGenerator.rotated_block(top_left)
 
-        top_right = SudokuPatternGenerator.random_block_pattern(edge)
+        top_right = SudokuPatternGenerator.random_block_pattern(corner)
         bottom_left = SudokuPatternGenerator.rotated_block(top_right)
 
-        top_center = SudokuPatternGenerator.random_block_pattern(edge)
+        top_center = SudokuPatternGenerator.random_block_pattern(center_edge)
         bottom_center = SudokuPatternGenerator.rotated_block(top_center)
 
-        left_center = SudokuPatternGenerator.random_block_pattern(edge)
+        left_center = SudokuPatternGenerator.random_block_pattern(center_edge)
         right_center = SudokuPatternGenerator.rotated_block(left_center)
 
         center = RANDOM_SYMETRIC_BLOCKS[random.randint(0, len(RANDOM_SYMETRIC_BLOCKS) - 1)]

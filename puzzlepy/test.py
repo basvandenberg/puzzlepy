@@ -42,7 +42,7 @@ def main(task, puzzle):
             pattern = SudokuPatternGenerator.to_string(grid)
             print(pattern)
 
-            SudokuGenerator.generate_from_pattern(pattern, 25, outdir, backtrack=False)
+            SudokuGenerator.generate_from_pattern(pattern, 100, outdir, backtrack=False)
 
 if __name__ == "__main__":
 
