@@ -15,24 +15,6 @@ def main(task, puzzle):
         print('level: %i' % (level))
 
     # Generate.
-
-    #sudoku, solution, level = SudokuGenerator.generate()
-
-    #print('\n%i\n' % (level))
-    #print(solution)
-    #print(sudoku)
-
-    # Generate from pattern.
-
-    #block_pattern = SudokuPatternGenerator.random_block_pattern(3)
-    #print(SudokuPatternGenerator.to_string(block_pattern))
-
-    #rotated = SudokuPatternGenerator.rotated_block(block_pattern)
-    #print(SudokuPatternGenerator.to_string(rotated))
-
-    #row = SudokuPatternGenerator.random_block_row_pattern(4, 3)
-    #print(SudokuPatternGenerator.to_string(row))
-
     if(task == 'generate'):
         outdir = '/mnt/MP1/Develop/'
 
