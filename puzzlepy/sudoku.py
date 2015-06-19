@@ -249,7 +249,7 @@ class SudokuSolver():
 
     def solve(self, backtrack=True, multiple_solutions=False):
 
-        num_iterations = 0
+        iterations = []
         backtraced = False
         
         num_moves = 1
@@ -259,7 +259,7 @@ class SudokuSolver():
             num_moves = self.apply_move_iteration()
 
             if(num_moves > 0):
-                num_iterations += 1
+                iterations.append(num_moves)
 
             #print(self.sudoku)
 
@@ -272,7 +272,7 @@ class SudokuSolver():
                 print('Running backtracking algorithm...')
                 self.backtrack('sorted', multiple_solutions)
 
-        return (num_iterations, backtraced)
+        return (iterations, backtraced)
 
     @timeout(1)
     def evaluate_difficulty(self, backtrack=True):
@@ -285,9 +285,9 @@ class SudokuSolver():
             3: 'Super Fiendish'    
         }
 
-        num_iter, backtraced = self.solve(backtrack=backtrack)
+        iterations, backtraced = self.solve(backtrack=backtrack)
 
-        print(num_iter)
+        print(iterations)
         print(backtraced)
 
         # level 3: extra fiendish, backtracking
@@ -295,15 +295,16 @@ class SudokuSolver():
             level = 3
 
         # level 2: fiendish, 15+
-        elif(num_iter > 8):
+        elif(len(iterations) > 8 &&
+                (max(iterations) < 8 && iterations[0] < 5)):
             level = 2
 
         # level 1: difficult, 7-14 iteraties
-        elif(num_iter > 6):
+        elif(len(iterations) > 6):
             level = 1
 
         # level 0: mild, 5-6 iteraties
-        elif(num_iter > 4):
+        elif(len(iterations) > 4):
             level = 0
         else:
             level = -1
