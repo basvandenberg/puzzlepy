@@ -124,7 +124,7 @@ class Sudoku(Grid):
 
                                 moves.add((cell, value))
 
-        print('Number of block moves: %i' % (len(moves)))
+        #print('Number of block moves: %i' % (len(moves)))
         #for cell, value in moves:
         #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
@@ -138,7 +138,7 @@ class Sudoku(Grid):
             if(len(cell.valid_values) == 1):
                 moves.add((cell, list(cell.valid_values)[0]))
 
-        print('Number of position moves: %i' % (len(moves)))
+        #print('Number of position moves: %i' % (len(moves)))
         #for cell, value in moves:
         #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
@@ -277,7 +277,7 @@ class SudokuSolver():
 
             backtraced = True
             if(backtrack):
-                print('Running backtracking algorithm...')
+                #print('Running backtracking algorithm...')
                 self.backtrack('sorted', multiple_solutions)
 
         return (iterations, backtraced)
