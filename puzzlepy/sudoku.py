@@ -80,20 +80,71 @@ class Sudoku(Grid):
         self.set_valid_values()
 
     def set_valid_values(self):
+        set_valid_values_cell()
+        set_valid_values_block()
 
+    def set_valid_values_cell(self):
+    '''
+
+    '''
+        # Iterate over the empty grid cells.
         for cell in [c for c in self if c.value is None]:
 
+            # Start of with all allowed values.
             valid_values = self.allowed_values
 
+            # Iterate over grid partitions.
             for name, partition in self.partitions.items():
 
+                # Get the partition subset where this cell is in.
                 subset = partition.subsets[cell.partition_subsets[name]]
+
+                # Get the values of its (non-empty) cells.
                 values = [c.value for c in subset if not c.value is None]
 
+                # Remove these values from the set of valid values.
                 valid_values = valid_values - set(values)
 
-            #print('%s: %s' % (cell.coord, valid_values))
             cell.valid_values = valid_values
+
+    def set_valid_values_block(self):
+        
+        for block in self.partitions['block']:
+
+            for value in self.allowed_values:
+
+                row_indices = get_valid_value_containing_block_rows()
+                if(len(row_indices) == 1):
+
+                    for row_index in range(3)
+                        # TODO
+                        pass
+
+                column_indices = get_valid_value_containing_block_columns()
+                if(len(column_indices) == 1):
+                    # TODO
+                    pass
+
+    def get_valid_value_containing_block_rows(self, block, value):
+        return self.get_valid_value_containing_subsets(block, 'row', value)
+
+    def get_valid_value_containing_block_columns(self, block, value):
+        return self.get_valid_value_containing_subsets(block, 'column', value)
+
+    def get_valid_value_containing_subsets(self, block, subset, value):
+
+        # Set of rows/cols in which this value is part of valid values.
+        block_subsets = set()
+
+        # Iterate over the empty cells in block.
+        for cell in [c for c in block if c.value is None]:
+
+            # Add row index to rows if value is valid for this cell.
+            if(value in cell.valid_values):
+                block_subsets.add(cell.partition_subsets['row'])
+
+        # Return true if the value is valid in only one row.
+        return len(block_subsets) == 1
 
     def get_block_moves(self):
 
