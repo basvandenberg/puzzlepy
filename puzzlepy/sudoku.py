@@ -1,58 +1,10 @@
 import copy
 import itertools
-import json
-import multiprocessing
 import random
-import time
 
 from grid import Grid
-
-
-class TimeoutException(Exception):
-    pass
-
-
-class RunableProcessing(multiprocessing.Process):
-    def __init__(self, func, *args, **kwargs):
-        self.queue = multiprocessing.Queue(maxsize=1)
-        args = (func,) + args
-        multiprocessing.Process.__init__(self, target=self.run_func, args=args, kwargs=kwargs)
-
-    def run_func(self, func, *args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            self.queue.put((True, result))
-        except Exception as e:
-            self.queue.put((False, e))
-
-    def done(self):
-        return self.queue.full()
-
-    def result(self):
-        return self.queue.get()
-
-
-def timeout(seconds, force_kill=True):
-    def wrapper(function):
-        def inner(*args, **kwargs):
-            now = time.time()
-            proc = RunableProcessing(function, *args, **kwargs)
-            proc.start()
-            proc.join(seconds)
-            if proc.is_alive():
-                if force_kill:
-                    proc.terminate()
-                runtime = int(time.time() - now)
-                raise TimeoutException('timed out after {0} seconds'.format(runtime))
-            assert proc.done()
-            success, result = proc.result()
-            if success:
-                return result
-            else:
-                raise result
-        return inner
-    return wrapper
-
+from timeout import timeout
+from timeout import TimeoutException
 
 class Sudoku(Grid):
 
@@ -80,13 +32,18 @@ class Sudoku(Grid):
         self.set_valid_values()
 
     def set_valid_values(self):
-        set_valid_values_cell()
-        set_valid_values_block()
+
+        self.set_valid_values_cell()
+        
+        num_discarded = 1
+        while(num_discarded > 0):
+            num_discarded = self.set_valid_values_block()
 
     def set_valid_values_cell(self):
-    '''
+        '''
 
-    '''
+        '''
+
         # Iterate over the empty grid cells.
         for cell in [c for c in self if c.value is None]:
 
@@ -108,22 +65,48 @@ class Sudoku(Grid):
             cell.valid_values = valid_values
 
     def set_valid_values_block(self):
+
+        count = 0
         
-        for block in self.partitions['block']:
+        for block_index, block in enumerate(self.partitions['block']):
 
             for value in self.allowed_values:
 
-                row_indices = get_valid_value_containing_block_rows()
+                #print('Block %i, value %i:' % (block_index, value))
+
+                row_indices = self.get_valid_value_containing_block_rows(block, value)
+                #print('Row indices: %s' % (str(row_indices)))
                 if(len(row_indices) == 1):
 
-                    for row_index in range(3)
-                        # TODO
-                        pass
+                    row_index = list(row_indices)[0]
 
-                column_indices = get_valid_value_containing_block_columns()
+                    for cell in [c for c in self if c.value is None]:
+
+                        if(cell.partition_subsets['row'] == row_index and not 
+                           cell.partition_subsets['block'] == block_index):
+                            
+                            set_size = len(cell.valid_values)
+                            cell.valid_values.discard(value)
+                            count += set_size - len(cell.valid_values)
+                            #print('(%i, %i) %i row' % (cell.coord.i, cell.coord.j, value))
+
+                column_indices = self.get_valid_value_containing_block_columns(block, value)
+                #print('Column indices: %s' % (str(column_indices)))
                 if(len(column_indices) == 1):
-                    # TODO
-                    pass
+
+                    col_index = list(column_indices)[0]
+
+                    for cell in [c for c in self if c.value is None]:
+
+                        if(cell.partition_subsets['column'] == col_index and not 
+                           cell.partition_subsets['block'] == block_index):
+                            
+                            set_size = len(cell.valid_values)
+                            cell.valid_values.discard(value)
+                            count += set_size - len(cell.valid_values)
+                            #print('(%i, %i) %i column' % (cell.coord.i, cell.coord.j, value))
+                            
+        return count
 
     def get_valid_value_containing_block_rows(self, block, value):
         return self.get_valid_value_containing_subsets(block, 'row', value)
@@ -141,10 +124,10 @@ class Sudoku(Grid):
 
             # Add row index to rows if value is valid for this cell.
             if(value in cell.valid_values):
-                block_subsets.add(cell.partition_subsets['row'])
+                block_subsets.add(cell.partition_subsets[subset])
 
         # Return true if the value is valid in only one row.
-        return len(block_subsets) == 1
+        return block_subsets
 
     def get_block_moves(self):
 
@@ -336,14 +319,6 @@ class SudokuSolver():
     @timeout(1)
     def evaluate_difficulty(self, backtrack=True):
 
-        tmp = {
-            -1: 'To easy',
-            0: 'Mild',
-            1: 'Difficult',
-            2: 'Fiendish',
-            3: 'Super Fiendish'    
-        }
-
         iterations, backtraced = self.solve(backtrack=backtrack)
 
         print(iterations)
@@ -366,8 +341,6 @@ class SudokuSolver():
             level = 0
         else:
             level = -1
-
-        #print(tmp[level])
 
         return level
 
@@ -511,18 +484,18 @@ class SudokuGenerator():
             index += 1
 
         # why did I do this??
-        sudoku = copy.deepcopy(solution)
+        # sudoku = copy.deepcopy(solution)
 
         return (last, solution, level)
 
-    def backtrack_generate():
+    def backtrack_generate(self):
 
         cells = SudokuGenerator.random_solution().cells
-        nodes = [cells[i][j] for (i, j) in solution.shuffled_coordinates()]
+        nodes = [cells[i][j] for (i, j) in cells.shuffled_coordinates()]
 
         self._backtrack(nodes, 0)
 
-    def _backtrack(nodes, tree_level):
+    def _backtrack(self, nodes, tree_level):
 
         # TODO
         pass
