@@ -16,15 +16,16 @@ def main(task, puzzle):
 
     # Generate.
     if(task == 'generate'):
-        outdir = '/mnt/MP1/Develop/'
+
+        outdir = '/home/bastiaan/Desktop'
 
         for i in range(500):
 
             grid = SudokuPatternGenerator.random_grid()
             pattern = SudokuPatternGenerator.to_string(grid)
-            print(pattern)
+            #print(pattern)
 
-            SudokuGenerator.generate_from_pattern(pattern, 100, outdir, backtrack=False)
+            SudokuGenerator.generate_from_pattern(pattern, 25, outdir, backtrack=False)
 
 if __name__ == "__main__":
 

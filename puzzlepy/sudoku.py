@@ -518,17 +518,26 @@ class SudokuGenerator():
             solver = SudokuSolver(copy.deepcopy(solution))
 
             try:
-                level = solver.evaluate_difficulty(backtrack=backtrack)
+                #level = solver.evaluate_difficulty(backtrack=backtrack)
+                iterations, backtrack = solver.solve(backtrack=False)
 
             except(TimeoutException):
                 print('Timeout.')
-                level = 4
+                #level = 4
 
-            print('\n%i:' % (level))
-            print(solution)
+            #print('\n%i:' % (level))
+            #print(solution)
 
-            with open('%s/level%i.txt' % (outdir, level), 'a+') as fout:
-                fout.write('%s\n' % (solution))
+            if not(backtrack):
+
+                if((len(iterations) > 3 and len(iterations) < 7) and
+                   (iterations[0] > 12 and iterations[0] < 20)):
+
+                    with open('%s/mild_sudokus.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (solution))
+
+                    with open('%s/mild_solve_tracks.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (str(iterations)))
 
     @staticmethod
     def random_solution():
@@ -656,9 +665,20 @@ class SudokuPatternGenerator():
     @staticmethod
     def random_grid():
 
-        corner = random.randint(1, 5)
-        center_edge = random.randint(1, 5)
-        center = random.randint(0, 5)
+        min_occupied = 25
+        max_occupied = 34
+        num_occupied = 0
+
+        while(num_occupied < min_occupied or num_occupied > max_occupied):
+
+            corner = random.randint(0, 5)
+            hor_edge = random.randint(0, 5)
+            ver_edge = random.randint(0, 5)
+            center = random.randint(0, 5)
+
+            num_occupied = 4 * corner + 2 * hor_edge + 2 * ver_edge + center
+
+        print(num_occupied)
 
         top_left = SudokuPatternGenerator.random_block_pattern(corner)
         bottom_right = SudokuPatternGenerator.rotated_block(top_left)
@@ -666,10 +686,10 @@ class SudokuPatternGenerator():
         top_right = SudokuPatternGenerator.random_block_pattern(corner)
         bottom_left = SudokuPatternGenerator.rotated_block(top_right)
 
-        top_center = SudokuPatternGenerator.random_block_pattern(center_edge)
+        top_center = SudokuPatternGenerator.random_block_pattern(ver_edge)
         bottom_center = SudokuPatternGenerator.rotated_block(top_center)
 
-        left_center = SudokuPatternGenerator.random_block_pattern(center_edge)
+        left_center = SudokuPatternGenerator.random_block_pattern(hor_edge)
         right_center = SudokuPatternGenerator.rotated_block(left_center)
 
         center = RANDOM_SYMETRIC_BLOCKS[random.randint(0, len(RANDOM_SYMETRIC_BLOCKS) - 1)]
