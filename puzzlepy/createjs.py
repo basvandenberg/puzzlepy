@@ -1,6 +1,6 @@
 from sudoku import Sudoku
 
-levels = ['mild', 'difficult', 'fiendish']
+levels = ['mild', 'difficult', 'fiendish', 'super_fiendish']
 
 pre =\
 '''(function() {
@@ -19,7 +19,7 @@ def run():
 
     for level in levels:
 
-        sudokus = Sudoku.load('../data/%s.txt' % (level))
+        sudokus = Sudoku.load('../data/%s_sudokus.txt' % (level))
         jsons = [s.to_json_string() for s in sudokus]
 
         level_strings.append('%s: [\n%s\n]' % (level, ',\n'.join(jsons)))

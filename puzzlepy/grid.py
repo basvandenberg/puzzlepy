@@ -101,6 +101,15 @@ class Grid:
     def is_finished(self):
         return all([p.is_finished() for p in self.partitions.values()])
 
+    def has_empty_partition_subset(self):
+
+        for key, partition in self.partitions.items():
+            if(partition.has_empty_subset()):
+                print(partition)
+                return True
+
+        return False
+
     def empty_cells(self):
     
         for cell in [c for c in self if c.is_empty()]:

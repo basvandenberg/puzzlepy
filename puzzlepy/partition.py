@@ -72,3 +72,15 @@ class Partition:
 
         values = [c.value for c in subset if not c.value is None]
         return self.finished_rule(values)
+
+    def has_empty_subset(self):
+
+        for subset in self.subsets:
+            if(self.is_empty_subset(subset)):
+                return True
+
+        return False
+
+    def is_empty_subset(self, subset):
+
+        return len([c.value for c in subset if not c.value is None]) == 0
