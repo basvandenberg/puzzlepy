@@ -528,15 +528,49 @@ class SudokuGenerator():
             #print('\n%i:' % (level))
             #print(solution)
 
+            # TODO turn this into separate function.
             if not(backtrack):
 
-                if((len(iterations) > 3 and len(iterations) < 7) and
-                   (iterations[0] > 12 and iterations[0] < 20)):
+                if(len(iterations) in set(range(3, 5)) and
+                     iterations[0] in set(range(10, 16))):
 
                     with open('%s/mild_sudokus.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (solution))
 
                     with open('%s/mild_solve_tracks.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (str(iterations)))
+
+                elif(len(iterations) in set(range(5, 7)) and 
+                       iterations[0] in set(range(10, 16))):
+
+                    with open('%s/difficult_sudokus.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (solution))
+
+                    with open('%s/difficult_solve_tracks.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (str(iterations)))
+
+                elif((len(iterations) > 6 and iterations[0] >= 10) or 
+                        (len(iterations) in set(range(3, 7)) and iterations[0] < 10)):
+
+                    with open('%s/fiendish_sudokus.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (solution))
+
+                    with open('%s/fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (str(iterations)))
+
+                elif(len(iterations) > 6 and iterations[0] < 10):
+
+                    with open('%s/super_fiendish_sudokus.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (solution))
+
+                    with open('%s/super_fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (str(iterations)))
+                
+                else:
+                    with open('%s/no_level_sudokus.txt' % (outdir), 'a+') as fout:
+                        fout.write('%s\n' % (solution))
+
+                    with open('%s/no_level_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
 
     @staticmethod

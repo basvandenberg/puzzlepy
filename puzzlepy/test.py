@@ -17,9 +17,9 @@ def main(task, puzzle):
     # Generate.
     if(task == 'generate'):
 
-        outdir = '/home/bastiaan/Desktop'
+        outdir = '../data/'
 
-        for i in range(500):
+        for i in range(5000):
 
             grid = SudokuPatternGenerator.random_grid()
             pattern = SudokuPatternGenerator.to_string(grid)
