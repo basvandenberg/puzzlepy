@@ -10,16 +10,36 @@ class Grid:
 
     def __init__(self, m, n):
 
-        self.m = m
-        self.n = n
+        self._m = m
+        self._n = n
 
-        self.cells = []
-        self.partitions = {}
+        self._cells = []
+        self._partitions = {}
+
+        self._allowed_values = None
 
         self._init_cells()
         self._init_neighbors()
 
-        self.allowed_values = None
+    @property
+    def m(self):
+        return self._m
+
+    @property
+    def n(self):
+        return self._n
+
+    @property
+    def cells(self):
+        return self._cells
+
+    @property
+    def partitions(self):
+        return self._partitions
+
+    @property
+    def allowed_values(self):
+        return self._allowed_values
 
     def _init_cells(self):
 
@@ -42,24 +62,6 @@ class Grid:
 
                     cell.neighbors[d] = self.get_cell(neighbor_coord)
 
-    def __str__(self):
-
-        result = ''
-
-        for i in range(self.m):
-            for j in range(self.n):
-                result += str(self.cells[i][j]) + ' '
-
-            result += '\n'
-
-        return result
-
-    def __iter__(self):
-
-        for i in range(self.m):
-            for j in range(self.n):
-                yield self.cells[i][j]
-
     def get_cell(self, coord):
 
         if(self.within_bounds(coord)):
@@ -75,7 +77,7 @@ class Grid:
     def set_initial_values(self, values):
 
         for cell in self:
-            cell.set_initial_value(values[cell.coord.i][cell.coord.j])
+            cell.initial_value(values[cell.coord.i][cell.coord.j])
 
     def get_values(self):
 
@@ -105,7 +107,6 @@ class Grid:
 
         for key, partition in self.partitions.items():
             if(partition.has_empty_subset()):
-                print(partition)
                 return True
 
         return False
@@ -145,7 +146,7 @@ class Grid:
 
         return values
 
-    def shuffled_coordinates():
+    def shuffled_coordinates(self):
 
         coords = [(i, j) for i in range(self.m) for j in range(self.n)]
         random.shuffle(coords)
@@ -199,4 +200,26 @@ class Grid:
             partition.append(row)
 
         self.partitions['block'] = Partition('block', partition, self)
+
+    #
+    #
+    #
+
+    def __str__(self):
+
+        result = ''
+
+        for i in range(self.m):
+            for j in range(self.n):
+                result += str(self.cells[i][j]) + ' '
+
+            result += '\n'
+
+        return result
+
+    def __iter__(self):
+
+        for i in range(self.m):
+            for j in range(self.n):
+                yield self.cells[i][j]
 

@@ -3,52 +3,83 @@ class Cell:
 
     def __init__(self, coord):
 
-        self.coord = coord
-        self.neighbors = [None, None, None, None]
+        self._coord = coord
+        self._neighbors = [None, None, None, None]
 
-        self.init_value = None
-        self.value = None
+        self._initial_value = None
+        self._value = None
 
+        self._valid_values = None
+        self._marks = set()
+
+        self._active = False
+        self._valid = True
+
+        self._partition_subsets = {}
+
+    @property
+    def coord(self):
+        return self._coord
+
+    @property
+    def neighbors(self):
+        return self._neighbors
+
+    @property
+    def initial_value(self):
+        return self._initial_value;
+
+    @initial_value.setter
+    def initial_value(self, value):
+        self._initial_value = True
+        self.value(value)
+
+    @property
+    def value(self):
+        return self._value;
+
+    @value.setter
+    def value(self, value):
+        self._value = value
         self.valid_values = None
-        self.marks = set()
-
-        self.active = False
-        self.valid = True
-
-        self.partition_subsets = {}
-
-    def set_initial_value(self, value):
-
-        self.initial_value = value
-        self.set_value(value)
-
-    def set_value(self, value):
-
-        self.valid_values = None
-        self.value = value
 
     def clear_value(self):
-
         self.value = None
 
     def is_empty(self):
-
         return self.value is None
 
-    def set_marks(self, marks):
+    @property
+    def valid_values(self):
+        return self._valid_values
 
-        self.marks = marks
+    @property
+    def marks(self):
+        return self._marks
+
+    @marks.setter
+    def marks(self, marks):
+        self._marks = marks
 
     def add_mark(self, mark):
-
         self.marks.add(mark)
 
     def clear_marks(self):
-
         self.marks = set()
 
-    def add_to_partition_subset(self, partition_name, subset_index):
+    @property
+    def active(self):
+        return self._active
 
+    @property
+    def valid(self):
+        return self._valid
+
+    @property
+    def partition_subsets(self):
+        return self._partition_subsets
+
+    def add_to_partition_subset(self, partition_name, subset_index):
         self.partition_subsets[partition_name] = subset_index
 
     def __str__(self):

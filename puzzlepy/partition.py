@@ -1,18 +1,48 @@
+from subset import SubSet
 
 class Partition:
 
     def __init__(self, name, partition, grid):
 
-        self.name = name
-        self.partition = partition
-        self.grid = grid
+        self._name = name
+        self._partition = partition
+        self._grid = grid
 
-        self.valid_rule = None
-        self.finished_rule = None
+        self._valid_rule = None
+        self._finished_rule = None
 
-        self.subsets = self._create_subsets(name, partition)
+        self._subsets = None
+        self._init_subsets(name, partition)
 
-    def _create_subsets(self, name, partition):
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def partition(self):
+        return self._partition
+
+    @property
+    def grid(self):
+        return self._grid
+
+    @property
+    def valid_rule(self):
+        return self._valid_rule
+
+    @valid_rule.setter
+    def valid_rule(self, rule):
+        self._valid_rule = rule
+
+    @property
+    def finished_rule(self):
+        return self._finished_rule
+
+    @finished_rule.setter
+    def finished_rule(self, rule):
+        self._finished_rule = rule
+
+    def _init_subsets(self, name, partition):
 
         max_index = 0
 
@@ -34,53 +64,33 @@ class Partition:
 
                 subsets[partition[i][j]].append(self.grid.cells[i][j])
         
-        return subsets
-
-    def __iter__(self):
-        return iter(self.subsets)
-
-    def set_valid_rule(self, rule):
-
-        self.valid_rule = rule
-
-    def set_finished_rule(self, rule):
-
-        self.finished_rule = rule
+        self.subsets = []
+        for index, subset in enumerate(subsets):
+            self.subsets.append(SubSet(subset, self, index))
 
     def is_valid(self):
 
         for subset in self.subsets:
-            if not(self.is_valid_subset(subset)):
+            if not(subset.is_valid()):
                 return False
 
         return True
-
-    def is_valid_subset(self, subset):
-
-        values = [c.value for c in subset if not c.value is None]
-        return self.valid_rule(values)
 
     def is_finished(self):
 
         for subset in self.subsets:
-            if not(self.is_finished_subset(subset)):
+            if not(subset.is_finished()):
                 return False
 
         return True
 
-    def is_finished_subset(self, subset):
-
-        values = [c.value for c in subset if not c.value is None]
-        return self.finished_rule(values)
-
     def has_empty_subset(self):
 
         for subset in self.subsets:
-            if(self.is_empty_subset(subset)):
+            if(subset.is_empty()):
                 return True
 
         return False
 
-    def is_empty_subset(self, subset):
-
-        return len([c.value for c in subset if not c.value is None]) == 0
+    def __iter__(self):
+        return iter(self.subsets)

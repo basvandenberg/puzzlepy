@@ -2,12 +2,18 @@
 class Coord:
 
     def __init__(self, i, j):
+        self._i = i
+        self._j = j
 
-        self.i = i
-        self.j = j
+    @property
+    def i(self):
+        return self._i
+
+    @property
+    def j(self):
+        return self._j
 
     def add(self, coord):
-
         return Coord(self.i + coord.i, self.j + coord.j)
 
     def __iter__(self):

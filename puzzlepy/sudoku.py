@@ -16,13 +16,13 @@ class Sudoku(Grid):
         self.add_column_partition()
         self.add_block_partition(3, 3)
 
-        self.partitions['row'].set_valid_rule(Sudoku.valid_rule)
-        self.partitions['column'].set_valid_rule(Sudoku.valid_rule)
-        self.partitions['block'].set_valid_rule(Sudoku.valid_rule)
+        self.partitions['row'].valid_rule = Sudoku.valid_rule
+        self.partitions['column'].valid_rule = Sudoku.valid_rule
+        self.partitions['block'].valid_rule = Sudoku.valid_rule
 
-        self.partitions['row'].set_finished_rule(Sudoku.finished_rule)
-        self.partitions['column'].set_finished_rule(Sudoku.finished_rule)
-        self.partitions['block'].set_finished_rule(Sudoku.finished_rule)
+        self.partitions['row'].finished_rule = Sudoku.finished_rule
+        self.partitions['column'].finished_rule = Sudoku.finished_rule
+        self.partitions['block'].finished_rule = Sudoku.finished_rule
 
         self.allowed_values = Sudoku.allowed_values()
 
