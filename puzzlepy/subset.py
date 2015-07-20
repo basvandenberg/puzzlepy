@@ -20,17 +20,14 @@ class SubSet:
         return self._index
 
     def is_valid(self):
-
         values = [c.value for c in self if not c.value is None]
         return self.partition.valid_rule(values)
 
     def is_finished(self):
-
         values = [c.value for c in self if not c.value is None]
         return self.partition.finished_rule(values)
  
     def is_empty(self):
-
         return len([c.value for c in self if not c.value is None]) == 0
 
     def __iter__(self):

@@ -153,7 +153,7 @@ class Grid:
 
         return coords
 
-    # Sudoku specific partitions
+    # Often used partitions
 
     def add_row_partition(self):
 
