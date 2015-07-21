@@ -77,7 +77,7 @@ class Grid:
     def set_initial_values(self, values):
 
         for cell in self:
-            cell.initial_value(values[cell.coord.i][cell.coord.j])
+            cell.initial_value = values[cell.coord.i][cell.coord.j]
 
     def get_values(self):
 

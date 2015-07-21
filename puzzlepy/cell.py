@@ -6,8 +6,8 @@ class Cell:
         self._coord = coord
         self._neighbors = [None, None, None, None]
 
-        self._initial_value = None
         self._value = None
+        self._initial_value = False
 
         self._valid_values = None
         self._marks = set()
@@ -32,7 +32,7 @@ class Cell:
     @initial_value.setter
     def initial_value(self, value):
         self._initial_value = True
-        self.value(value)
+        self.value = value
 
     @property
     def value(self):
@@ -52,6 +52,10 @@ class Cell:
     @property
     def valid_values(self):
         return self._valid_values
+
+    @valid_values.setter
+    def valid_values(self, values):
+        self._valid_values = values
 
     @property
     def marks(self):

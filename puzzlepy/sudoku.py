@@ -8,7 +8,15 @@ from timeout import TimeoutException
 
 class Sudoku(Grid):
 
+    # High weight for easy moves. 
+    BLOCK_MOVE_WEIGHT = 2
+    ROW_MOVE_WEIGHT = 1
+    COLUMN_MOVE_WEIGHT = 1
+    POSITION_MOVE_WEIGHT = 1
+
     def __init__(self):
+        '''
+        '''
         
         super().__init__(9, 9)
 
@@ -69,29 +77,26 @@ class Sudoku(Grid):
         count = 0
         
         for block_index, block in enumerate(self.partitions['block']):
-
             for value in self.allowed_values:
 
-                #print('Block %i, value %i:' % (block_index, value))
+                row_indices =\
+                    self.get_valid_value_containing_block_rows(block, value)
 
-                row_indices = self.get_valid_value_containing_block_rows(block, value)
-                #print('Row indices: %s' % (str(row_indices)))
                 if(len(row_indices) == 1):
 
                     row_index = list(row_indices)[0]
 
                     for cell in [c for c in self if c.value is None]:
-
-                        if(cell.partition_subsets['row'] == row_index and not 
+                        if(cell.partition_subsets['row'] == row_index and not
                            cell.partition_subsets['block'] == block_index):
                             
                             set_size = len(cell.valid_values)
                             cell.valid_values.discard(value)
                             count += set_size - len(cell.valid_values)
-                            #print('(%i, %i) %i row' % (cell.coord.i, cell.coord.j, value))
 
-                column_indices = self.get_valid_value_containing_block_columns(block, value)
-                #print('Column indices: %s' % (str(column_indices)))
+                column_indices =\
+                    self.get_valid_value_containing_block_columns(block, value)
+
                 if(len(column_indices) == 1):
 
                     col_index = list(column_indices)[0]
@@ -104,7 +109,6 @@ class Sudoku(Grid):
                             set_size = len(cell.valid_values)
                             cell.valid_values.discard(value)
                             count += set_size - len(cell.valid_values)
-                            #print('(%i, %i) %i column' % (cell.coord.i, cell.coord.j, value))
                             
         return count
 
@@ -131,36 +135,32 @@ class Sudoku(Grid):
 
     def get_block_moves(self):
 
-        moves = set()
+        moves = {}
 
         for name, partition in self.partitions.items():
+
+            moves[name] = set()
+
             for index, subset in enumerate(partition):
 
                 # Get valid values in this partition subset.
                 valid_values = []
                 for cell in [c for c in subset if c.value is None]:
                     valid_values.extend(list(cell.valid_values))
-                #print(valid_values)
 
                 # Get values that still need to be added in partition subset.
                 values = [c.value for c in subset if not c.value is None]
                 values_to_add = self.allowed_values - set(values)
 
-                #print('%s - %i: %s' % (name, index, str(values_to_add)))
-                
                 for value in values_to_add:
+
                     num_positions = valid_values.count(value)
-                    #print('value %i, positions: %i' % (value, num_positions))
 
                     if(num_positions == 1):
                         for cell in [c for c in subset if c.value is None]:
                             if(value in cell.valid_values):
 
-                                moves.add((cell, value))
-
-        #print('Number of block moves: %i' % (len(moves)))
-        #for cell, value in moves:
-        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+                                moves[name].add((cell, value))
 
         return moves
 
@@ -170,11 +170,8 @@ class Sudoku(Grid):
 
         for cell in [c for c in self if c.value is None]:
             if(len(cell.valid_values) == 1):
-                moves.add((cell, list(cell.valid_values)[0]))
 
-        #print('Number of position moves: %i' % (len(moves)))
-        #for cell, value in moves:
-        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+                moves.add((cell, list(cell.valid_values)[0]))
 
         return moves
 
@@ -294,24 +291,19 @@ class SudokuSolver():
         iterations = []
         backtraced = False
         
-        num_moves = 1
+        weight = 1
 
-        while(num_moves > 0 and not self.sudoku.is_finished()):
+        while(weight > 0 and not self.sudoku.is_finished()):
 
-            num_moves = self.apply_move_iteration()
+            weight = self.apply_move_iteration()
 
-            if(num_moves > 0):
-                iterations.append(num_moves)
-
-            #print(self.sudoku)
-
-        #self.sudoku.print_sorted_valid_values()
+            if(weight > 0):
+                iterations.append(weight)
 
         if not(self.sudoku.is_finished()):
 
             backtraced = True
             if(backtrack):
-                #print('Running backtracking algorithm...')
                 self.backtrack('sorted', multiple_solutions)
 
         return (iterations, backtraced)
@@ -346,21 +338,45 @@ class SudokuSolver():
 
     def apply_move_iteration(self):
 
-        block_moves = self.sudoku.get_block_moves()
+        partition_moves = self.sudoku.get_block_moves()
+        partition_union = set.union(partition_moves['row'],
+                                    partition_moves['column'],
+                                    partition_moves['block'])
+
+        block_moves = partition_moves['block']
+        row_moves = partition_moves['row'] - block_moves
+        column_moves = (partition_moves['column'] - block_moves) - row_moves
+
         position_moves = self.sudoku.get_position_moves()
+        position_moves = position_moves - partition_union
 
-        moves = block_moves.union(position_moves)
+        moves = set().union(partition_union, position_moves)
 
-        #print('Number of moves: %i' % (len(moves)))
-        #for cell, value in moves:
-        #    print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
+        '''
+        print('\nNew:')
+        print('Block')
+        print(block_moves)
+        print('Row')
+        print(row_moves)
+        print('Column')
+        print(column_moves)
+        print('Position')
+        print(position_moves)
+        print('All')
+        print(moves)
+        '''
+
+        weight = len(row_moves) * Sudoku.ROW_MOVE_WEIGHT +\
+                 len(column_moves) * Sudoku.COLUMN_MOVE_WEIGHT +\
+                 len(block_moves) * Sudoku.BLOCK_MOVE_WEIGHT +\
+                 len(position_moves) * Sudoku.POSITION_MOVE_WEIGHT
 
         for cell, value in moves:
-            cell.set_value(value)
+            cell.value = value
 
         self.sudoku.set_valid_values()
 
-        return len(moves)
+        return weight
 
     def backtrack(self, type, multiple_solutions=False):
 
@@ -400,7 +416,7 @@ class SudokuSolver():
 
             #print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
-            cell.set_value(value)
+            cell.value =value
 
             # Solution found.
             if(self.sudoku.is_finished()):
@@ -577,14 +593,11 @@ class SudokuGenerator():
     def random_solution():
 
         sudoku = Sudoku.empty_sudoku()
-        #sudoku.file_in = '../data/random.txt'
         sudoku.file_out = '../data/random_solution.txt'
 
         solver = SudokuSolver(sudoku)
         solution = solver.backtrack('random')[0]
 
-        #print(str(solution))
-        
         return solution
 
 
