@@ -1,12 +1,16 @@
 import copy
 import itertools
 import random
+import json
 
-from grid import Grid
-from timeout import timeout
-from timeout import TimeoutException
+from puzzlepy.grid import Grid
+from puzzlepy.timeout import timeout
+from puzzlepy.timeout import TimeoutException
 
 class Sudoku(Grid):
+
+    # Difficulty levels.
+    LEVELS = ['mild', 'difficult', 'fiendish', 'super_fiendish']
 
     # High weight for easy moves. 
     BLOCK_MOVE_WEIGHT = 2
@@ -213,7 +217,7 @@ class Sudoku(Grid):
 
         # Parse sudoku string.
         for line in [l for l in s.split('\n') if not l.strip() == '']:
-            init_values.append(Sudoku.row_from_string(line))
+            init_values.append(Sudoku._row_from_string(line))
 
         # Initialize sudoku and set initial values.
         sudoku = cls()
@@ -223,7 +227,7 @@ class Sudoku(Grid):
         return sudoku
 
     @staticmethod
-    def row_from_string(s):
+    def _row_from_string(s):
 
         row = []
 
@@ -236,7 +240,7 @@ class Sudoku(Grid):
         return row
 
     @classmethod
-    def load(cls, file_name):
+    def load_txt(cls, file_name):
 
         sudokus = []
 
@@ -260,7 +264,7 @@ class Sudoku(Grid):
 
                 # Append this line to rows.
                 else:
-                    rows.append(Sudoku.row_from_string(line))
+                    rows.append(Sudoku._row_from_string(line))
 
             if(len(rows) == 9):
 
@@ -272,13 +276,40 @@ class Sudoku(Grid):
         return sudokus
 
     @staticmethod
-    def save(file_name, sudokus):
+    def save_txt(file_name, sudokus):
 
         with open(file_name, 'w') as fout:
 
             for sudoku in sudokus:
                 fout.write('%s\n\n' % (str(sudoku)))
 
+    @classmethod
+    def load_json(file_name):
+
+        sudokus = []
+       
+        # Parse json from file.
+        data = {}
+        with open(file_name, 'r') as fin:
+            data = json.load(fin)
+
+        # Iterate over difficulty levels (discard level, just reading sudos).
+        for _, level_sudokus in data.iteritems():
+            for sudoku_values in level_sudokus:
+
+                sudoku = cls()
+                sudoku.set_initial_values(sudoku_values)
+                sudokus.append(sudoku)
+
+        return sudokus
+
+    @staticmethod
+    def save_json(file_name, sudokus):
+        pass
+
+    @staticmethod
+    def save_node_module(file_name, sudokus):
+        pass
 
 class SudokuSolver():
 

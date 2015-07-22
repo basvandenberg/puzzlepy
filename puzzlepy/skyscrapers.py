@@ -1,4 +1,4 @@
-from grid import Grid
+from puzzlepy.grid import Grid
 
 class Skyscrapers(Grid):
 

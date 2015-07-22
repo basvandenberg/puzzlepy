@@ -1,4 +1,4 @@
-from subset import SubSet
+from puzzlepy.subset import SubSet
 
 class Partition:
 

@@ -1,10 +1,9 @@
 import random
 
-import coord
-
-from coord import Coord
-from cell import Cell
-from partition import Partition
+from puzzlepy import coord
+from puzzlepy.coord import Coord
+from puzzlepy.cell import Cell
+from puzzlepy.partition import Partition
 
 class Grid:
 

@@ -1,4 +1,4 @@
-from sudoku import Sudoku
+from puzzlepy.sudoku import Sudoku
 
 levels = ['mild', 'difficult', 'fiendish', 'super_fiendish']
 
