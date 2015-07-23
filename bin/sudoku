@@ -5,7 +5,7 @@ import sys
 import argparse
 import traceback
 
-from puzzlepy import sudoku
+from puzzlepy.sudoku import Sudoku, SudokuSolver
 
 def main(task, puzzle):
 
@@ -34,8 +34,13 @@ def main(task, puzzle):
 
 def solve(fin, fout):
 
-    print(fin)
-    print(fout)
+    sudokus = Sudoku.load_txt(fin)
+
+    for s in sudokus:
+        ss = SudokuSolver(s)
+        result = ss.solve()
+
+        print(result)
 
 def generate(fout):
 
@@ -50,9 +55,8 @@ if __name__ == "__main__":
     action.add_argument('--solve', action='store_true')
     action.add_argument('--generate', action='store_true')
 
-    parser.add_argument('--input-file', type=argparse.FileType())
-    parser.add_argument('--output-file', type=argparse.FileType('w'), 
-                        optional=True)
+    parser.add_argument('--input-file', type=argparse.FileType('r'))
+    parser.add_argument('--output-file', type=argparse.FileType('w'))
 
     args = parser.parse_args()
 

@@ -240,38 +240,38 @@ class Sudoku(Grid):
         return row
 
     @classmethod
-    def load_txt(cls, file_name):
+    def load_txt(cls, fin):
 
         sudokus = []
 
-        with open(file_name, 'r') as fin:
-            rows = []
+        #with open(file_name, 'r') as fin:
+        rows = []
 
-            for line in [l.strip() for l in fin]:
+        for line in [l.strip() for l in fin]:
 
-                # Start reading new grid.
-                if(line == ''):
+            # Start reading new grid.
+            if(line == ''):
 
-                    # Create sudo if we have enough lines.
-                    if(len(rows) == 9):
+                # Create sudo if we have enough lines.
+                if(len(rows) == 9):
 
-                        # Initialize sudoku and set initial values.
-                        sudoku = cls()
-                        sudoku.set_initial_values(rows)
-                        sudokus.append(sudoku)
+                    # Initialize sudoku and set initial values.
+                    sudoku = cls()
+                    sudoku.set_initial_values(rows)
+                    sudokus.append(sudoku)
 
-                    rows = []
+                rows = []
 
-                # Append this line to rows.
-                else:
-                    rows.append(Sudoku._row_from_string(line))
+            # Append this line to rows.
+            else:
+                rows.append(Sudoku._row_from_string(line))
 
-            if(len(rows) == 9):
+        if(len(rows) == 9):
 
-                # Initialize sudoku and set initial values.
-                sudoku = cls()
-                sudoku.set_initial_values(rows)
-                sudokus.append(sudoku)
+            # Initialize sudoku and set initial values.
+            sudoku = cls()
+            sudoku.set_initial_values(rows)
+            sudokus.append(sudoku)
 
         return sudokus
 
@@ -447,7 +447,7 @@ class SudokuSolver():
 
             #print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
 
-            cell.value =value
+            cell.value = value
 
             # Solution found.
             if(self.sudoku.is_finished()):
@@ -462,7 +462,7 @@ class SudokuSolver():
                 self._solutions.append(copy.deepcopy(self.sudoku))
 
                 if(self.multiple_solutions):
-                    cell.set_value(None)
+                    cell.value = None
                     return False
                 else:
                     return True
@@ -470,7 +470,7 @@ class SudokuSolver():
             # Valid grid, but not finshed yet, proceed with next tree level.
             if(self.sudoku.is_valid() and self._backtrack(nodes, tree_depth + 1)):
                 if(self.multiple_solutions):
-                    cell.set_value(None)
+                    cell.value = None
                 return True
 
             # Invalid grid, skip this value
@@ -478,7 +478,7 @@ class SudokuSolver():
                 pass
 
         # No more values left to explore, done with this branch, level up.
-        cell.set_value(None)
+        cell.value = None
         return False
 
 class SudokuGenerator():
