@@ -9,15 +9,6 @@ from puzzlepy.timeout import TimeoutException
 
 class Sudoku(Grid):
 
-    # Difficulty levels.
-    LEVELS = ['mild', 'difficult', 'fiendish', 'super_fiendish']
-
-    # High weight for easy moves. 
-    BLOCK_MOVE_WEIGHT = 2
-    ROW_MOVE_WEIGHT = 1
-    COLUMN_MOVE_WEIGHT = 1
-    POSITION_MOVE_WEIGHT = 1
-
     def __init__(self):
         '''
         '''
@@ -284,7 +275,7 @@ class Sudoku(Grid):
                 fout.write('%s\n\n' % (str(sudoku)))
 
     @classmethod
-    def load_json(file_name):
+    def load_json(cls, file_name):
 
         sudokus = []
        
@@ -311,36 +302,48 @@ class Sudoku(Grid):
     def save_node_module(file_name, sudokus):
         pass
 
+
 class SudokuSolver():
+
+    # Difficulty levels.
+    LEVELS = ['mild', 'difficult', 'fiendish', 'super_fiendish']
+
+    # High weight for easy moves. 
+    BLOCK_MOVE_EASE = 3
+    ROW_MOVE_EASE = 1
+    COLUMN_MOVE_EASE = 1
+    POSITION_MOVE_EASE = 1
 
     def __init__(self, sudoku):
 
         self.sudoku = sudoku
 
-    def solve(self, backtrack=True, multiple_solutions=False):
+    def solve(self, backtrack=False, multiple_solutions=False):
 
         iterations = []
         backtraced = False
         
-        weight = 1
+        ease = 1
 
-        while(weight > 0 and not self.sudoku.is_finished()):
+        while(ease > 0 and not self.sudoku.is_finished()):
 
-            weight = self.apply_move_iteration()
+            _, ease = self.apply_move_iteration()
 
-            if(weight > 0):
-                iterations.append(weight)
+            if(ease > 0):
+                iterations.append(ease)
 
         if not(self.sudoku.is_finished()):
 
             backtraced = True
             if(backtrack):
+                print('Start backtrack')
                 self.backtrack('sorted', multiple_solutions)
 
         return (iterations, backtraced)
 
+    # DEPRICATED update!
     @timeout(1)
-    def evaluate_difficulty(self, backtrack=True):
+    def evaluate_difficulty(self, backtrack=False):
 
         iterations, backtraced = self.solve(backtrack=backtrack)
 
@@ -367,9 +370,9 @@ class SudokuSolver():
 
         return level
 
-    def apply_move_iteration(self):
+    @staticmethod
+    def unique_moves(partition_moves, position_moves):
 
-        partition_moves = self.sudoku.get_block_moves()
         partition_union = set.union(partition_moves['row'],
                                     partition_moves['column'],
                                     partition_moves['block'])
@@ -378,36 +381,44 @@ class SudokuSolver():
         row_moves = partition_moves['row'] - block_moves
         column_moves = (partition_moves['column'] - block_moves) - row_moves
 
-        position_moves = self.sudoku.get_position_moves()
         position_moves = position_moves - partition_union
+
+        moves_per_type = {
+            'block': block_moves,
+            'row': row_moves,
+            'column': column_moves,
+            'position': position_moves
+        }
 
         moves = set().union(partition_union, position_moves)
 
-        '''
-        print('\nNew:')
-        print('Block')
-        print(block_moves)
-        print('Row')
-        print(row_moves)
-        print('Column')
-        print(column_moves)
-        print('Position')
-        print(position_moves)
-        print('All')
-        print(moves)
-        '''
+        return (moves_per_type, moves)
 
-        weight = len(row_moves) * Sudoku.ROW_MOVE_WEIGHT +\
-                 len(column_moves) * Sudoku.COLUMN_MOVE_WEIGHT +\
-                 len(block_moves) * Sudoku.BLOCK_MOVE_WEIGHT +\
-                 len(position_moves) * Sudoku.POSITION_MOVE_WEIGHT
+    @staticmethod
+    def move_iteration_ease(moves):
+
+        return\
+            len(moves['row']) * SudokuSolver.ROW_MOVE_EASE +\
+            len(moves['column']) * SudokuSolver.COLUMN_MOVE_EASE +\
+            len(moves['block']) * SudokuSolver.BLOCK_MOVE_EASE +\
+            len(moves['position']) * SudokuSolver.POSITION_MOVE_EASE
+
+    def apply_move_iteration(self):
+
+        partition_moves = self.sudoku.get_block_moves()
+        position_moves = self.sudoku.get_position_moves()
+
+        moves_per_type, moves =\
+                SudokuSolver.unique_moves(partition_moves, position_moves)
 
         for cell, value in moves:
             cell.value = value
 
         self.sudoku.set_valid_values()
 
-        return weight
+        ease = SudokuSolver.move_iteration_ease(moves_per_type)
+
+        return (moves_per_type, ease)
 
     def backtrack(self, type, multiple_solutions=False):
 
@@ -548,8 +559,10 @@ class SudokuGenerator():
         pass
 
     @staticmethod
-    def generate_from_pattern(pattern, num_tries, outdir, backtrack=True):
+    def generate_from_pattern(num_tries, outdir):
         
+        grid = SudokuPatternGenerator.random_grid()
+        pattern = SudokuPatternGenerator.to_string(grid)
         pattern_sudoku = Sudoku.from_string(pattern)
 
         for i in range(num_tries):
@@ -565,21 +578,16 @@ class SudokuGenerator():
             solver = SudokuSolver(copy.deepcopy(solution))
 
             try:
-                #level = solver.evaluate_difficulty(backtrack=backtrack)
-                iterations, backtrack = solver.solve(backtrack=False)
+                iterations, backtraced = solver.solve()
 
             except(TimeoutException):
                 print('Timeout.')
-                #level = 4
-
-            #print('\n%i:' % (level))
-            #print(solution)
 
             # TODO turn this into separate function.
-            if not(backtrack):
+            if not(backtraced):
 
-                if(len(iterations) in set(range(3, 5)) and
-                     iterations[0] in set(range(10, 16))):
+                if(len(iterations) in range(3, 6) and
+                     iterations[0] in range(30, 55)):
 
                     with open('%s/mild_sudokus.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (solution))
@@ -587,8 +595,10 @@ class SudokuGenerator():
                     with open('%s/mild_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
 
-                elif(len(iterations) in set(range(5, 7)) and 
-                       iterations[0] in set(range(10, 16))):
+                    return 'mild'
+
+                elif(len(iterations) in range(5, 8) and 
+                       iterations[0] in range(20, 30)):
 
                     with open('%s/difficult_sudokus.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (solution))
@@ -596,8 +606,10 @@ class SudokuGenerator():
                     with open('%s/difficult_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
 
-                elif((len(iterations) > 6 and iterations[0] >= 10) or 
-                        (len(iterations) in set(range(3, 7)) and iterations[0] < 10)):
+                    return 'difficult'
+
+                elif(len(iterations) in range(7, 10) and
+                        iterations[0] in range(15, 20)):
 
                     with open('%s/fiendish_sudokus.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (solution))
@@ -605,13 +617,17 @@ class SudokuGenerator():
                     with open('%s/fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
 
-                elif(len(iterations) > 6 and iterations[0] < 10):
+                    return 'fiendish'
+
+                elif(len(iterations) >= 10 and iterations[0] < 15):
 
                     with open('%s/super_fiendish_sudokus.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (solution))
 
                     with open('%s/super_fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
+
+                    return 'super fiendish'
                 
                 else:
                     with open('%s/no_level_sudokus.txt' % (outdir), 'a+') as fout:
@@ -619,6 +635,7 @@ class SudokuGenerator():
 
                     with open('%s/no_level_solve_tracks.txt' % (outdir), 'a+') as fout:
                         fout.write('%s\n' % (str(iterations)))
+        return None
 
     @staticmethod
     def random_solution():
@@ -755,8 +772,6 @@ class SudokuPatternGenerator():
             center = random.randint(0, 5)
 
             num_occupied = 4 * corner + 2 * hor_edge + 2 * ver_edge + center
-
-        print(num_occupied)
 
         top_left = SudokuPatternGenerator.random_block_pattern(corner)
         bottom_right = SudokuPatternGenerator.rotated_block(top_left)
