@@ -152,6 +152,26 @@ class Grid:
 
         return coords
 
+    def shuffled_top_triangle_coordinates(self):
+
+        coords = [(i, j) for i in range(self.m) for j in range(i + 1)]
+        random.shuffle(coords)
+
+        return coords
+
+    def rotated_coord(coord):
+
+        # Assumes odd m and n
+        center_m = self.m // 2
+        center_n = self.n // 2
+
+        i, j = coord
+
+        rotated_i = (center_m - i) + center_m
+        rotated_j = (center_n - j) + center_n
+
+        return (rotated_i, rotated_j)
+
     # Often used partitions
 
     def add_row_partition(self):

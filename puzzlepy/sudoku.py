@@ -5,7 +5,7 @@ import json
 
 from puzzlepy.grid import Grid
 from puzzlepy.timeout import timeout
-from puzzlepy.timeout import TimeoutException
+#from puzzlepy.timeout import TimeoutException
 
 class Sudoku(Grid):
 
@@ -578,7 +578,7 @@ class SudokuGenerator():
     def backtrack_generate(self):
 
         cells = SudokuGenerator.random_solution().cells
-        nodes = [cells[i][j] for (i, j) in cells.shuffled_coordinates()]
+        nodes = []
 
         self._backtrack(nodes, 0)
 
@@ -590,22 +590,28 @@ class SudokuGenerator():
     @staticmethod
     def generate_from_pattern(ease_level):
         
-        num_tries = 25
-
-        grid = SudokuPatternGenerator.random_grid()
-        pattern = SudokuPatternGenerator.to_string(grid)
-        pattern_sudoku = Sudoku.from_string(pattern)
+        num_tries = 100
+        rand_solution = SudokuGenerator.random_solution()
 
         for i in range(num_tries):
 
-            solution = SudokuGenerator.random_solution()
+            # Clone the random solution.
+            solution = copy.deepcopy(rand_solution)
 
+            # Generate pattern sudoku.
+            grid = SudokuPatternGenerator.random_grid()
+            pattern = SudokuPatternGenerator.to_string(grid)
+            pattern_sudoku = Sudoku.from_string(pattern)
+
+            # Apply pattern to the random solution.
             for cell in pattern_sudoku:
                 if(cell.value is None):
                     solution.cells[cell.coord.i][cell.coord.j].clear_value()
 
+            # Set valid values.
             solution.set_valid_values()
 
+            # Solve.
             solver = SudokuSolver(copy.deepcopy(solution))
             iterations, backtraced = solver.solve()
             level = SudokuSolver.ease_level(iterations, backtraced)
@@ -619,45 +625,39 @@ class SudokuGenerator():
     def random_solution():
 
         sudoku = Sudoku.empty_sudoku()
-        sudoku.file_out = '../data/random_solution.txt'
-
         solver = SudokuSolver(sudoku)
         solution = solver.backtrack('random')[0]
 
         return solution
 
 
-
-
-
-RANDOM_SYMETRIC_BLOCKS = [
-
-    [['.', '.', '.'], ['.', '.', '.'], ['.', '.', '.']],
-    [['.', '.', '.'], ['.', '0', '.'], ['.', '.', '.']],
-    [['.', '.', '.'], ['0', '.', '0'], ['.', '.', '.']],
-    [['.', '0', '.'], ['.', '.', '.'], ['.', '0', '.']],
-    [['0', '.', '.'], ['.', '.', '.'], ['.', '.', '0']],
-    [['.', '.', '0'], ['.', '.', '.'], ['0', '.', '.']],
-    [['.', '0', '.'], ['.', '0', '.'], ['.', '0', '.']],
-    [['.', '.', '0'], ['.', '0', '.'], ['0', '.', '.']],
-    [['.', '.', '.'], ['0', '0', '0'], ['.', '.', '.']],
-    [['0', '.', '.'], ['.', '0', '.'], ['.', '.', '0']],
-    [['0', '.', '0'], ['.', '.', '.'], ['0', '.', '0']],
-    [['.', '0', '.'], ['0', '.', '0'], ['.', '0', '.']],
-    [['0', '0', '.'], ['.', '.', '.'], ['.', '0', '0']],
-    [['.', '.', '0'], ['0', '.', '0'], ['0', '.', '.']],
-    [['.', '0', '0'], ['.', '.', '.'], ['0', '0', '.']],
-    [['0', '.', '.'], ['0', '.', '0'], ['.', '.', '0']],
-    [['0', '.', '0'], ['.', '0', '.'], ['0', '.', '0']],
-    [['.', '0', '.'], ['0', '0', '0'], ['.', '0', '.']],
-    [['0', '0', '.'], ['.', '0', '.'], ['.', '0', '0']],
-    [['.', '.', '0'], ['0', '0', '0'], ['0', '.', '.']],
-    [['.', '0', '0'], ['.', '0', '.'], ['0', '0', '.']],
-    [['0', '.', '.'], ['0', '0', '0'], ['.', '.', '0']]
-]
-
-
 class SudokuPatternGenerator():
+
+    RANDOM_SYMETRIC_BLOCKS = [
+
+        [['.', '.', '.'], ['.', '.', '.'], ['.', '.', '.']],
+        [['.', '.', '.'], ['.', '0', '.'], ['.', '.', '.']],
+        [['.', '.', '.'], ['0', '.', '0'], ['.', '.', '.']],
+        [['.', '0', '.'], ['.', '.', '.'], ['.', '0', '.']],
+        [['0', '.', '.'], ['.', '.', '.'], ['.', '.', '0']],
+        [['.', '.', '0'], ['.', '.', '.'], ['0', '.', '.']],
+        [['.', '0', '.'], ['.', '0', '.'], ['.', '0', '.']],
+        [['.', '.', '0'], ['.', '0', '.'], ['0', '.', '.']],
+        [['.', '.', '.'], ['0', '0', '0'], ['.', '.', '.']],
+        [['0', '.', '.'], ['.', '0', '.'], ['.', '.', '0']],
+        [['0', '.', '0'], ['.', '.', '.'], ['0', '.', '0']],
+        [['.', '0', '.'], ['0', '.', '0'], ['.', '0', '.']],
+        [['0', '0', '.'], ['.', '.', '.'], ['.', '0', '0']],
+        [['.', '.', '0'], ['0', '.', '0'], ['0', '.', '.']],
+        [['.', '0', '0'], ['.', '.', '.'], ['0', '0', '.']],
+        [['0', '.', '.'], ['0', '.', '0'], ['.', '.', '0']],
+        [['0', '.', '0'], ['.', '0', '.'], ['0', '.', '0']],
+        [['.', '0', '.'], ['0', '0', '0'], ['.', '0', '.']],
+        [['0', '0', '.'], ['.', '0', '.'], ['.', '0', '0']],
+        [['.', '.', '0'], ['0', '0', '0'], ['0', '.', '.']],
+        [['.', '0', '0'], ['.', '0', '.'], ['0', '0', '.']],
+        [['0', '.', '.'], ['0', '0', '0'], ['.', '.', '0']]
+    ]
 
     @staticmethod
     def random_block_pattern(num_filled):
@@ -763,11 +763,14 @@ class SudokuPatternGenerator():
         left_center = SudokuPatternGenerator.random_block_pattern(hor_edge)
         right_center = SudokuPatternGenerator.rotated_block(left_center)
 
-        center = RANDOM_SYMETRIC_BLOCKS[random.randint(0, len(RANDOM_SYMETRIC_BLOCKS) - 1)]
+        center = SudokuPatternGenerator.RANDOM_SYMETRIC_BLOCKS[random.randint(
+            0, len(SudokuPatternGenerator.RANDOM_SYMETRIC_BLOCKS) - 1)]
 
         top = SudokuPatternGenerator.hconcat([top_left, top_center, top_right])
-        middle = SudokuPatternGenerator.hconcat([left_center, center, right_center])
-        bottom = SudokuPatternGenerator.hconcat([bottom_left, bottom_center, bottom_right])
+        middle = SudokuPatternGenerator.hconcat(
+            [left_center, center, right_center])
+        bottom = SudokuPatternGenerator.hconcat(
+            [bottom_left, bottom_center, bottom_right])
 
         grid = SudokuPatternGenerator.vconcat([top, middle, bottom])
 
