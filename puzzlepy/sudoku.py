@@ -371,6 +371,35 @@ class SudokuSolver():
         return level
 
     @staticmethod
+    def ease_level(iterations, backtraced):
+
+        # TODO turn this into separate function.
+        if(backtraced):
+            return 'impossible'
+
+        if(len(iterations) in range(3, 6) and
+             iterations[0] in range(30, 55)):
+
+            return 'mild'
+
+        elif(len(iterations) in range(5, 8) and 
+               iterations[0] in range(20, 30)):
+
+            return 'difficult'
+
+        elif(len(iterations) in range(7, 10) and
+                iterations[0] in range(15, 20)):
+
+            return 'fiendish'
+
+        elif(len(iterations) >= 10 and iterations[0] < 15):
+
+            return 'super-fiendish'
+        
+        else:
+            return 'too-easy'
+
+    @staticmethod
     def unique_moves(partition_moves, position_moves):
 
         partition_union = set.union(partition_moves['row'],
@@ -559,8 +588,10 @@ class SudokuGenerator():
         pass
 
     @staticmethod
-    def generate_from_pattern(num_tries, outdir):
+    def generate_from_pattern(ease_level):
         
+        num_tries = 25
+
         grid = SudokuPatternGenerator.random_grid()
         pattern = SudokuPatternGenerator.to_string(grid)
         pattern_sudoku = Sudoku.from_string(pattern)
@@ -576,65 +607,12 @@ class SudokuGenerator():
             solution.set_valid_values()
 
             solver = SudokuSolver(copy.deepcopy(solution))
+            iterations, backtraced = solver.solve()
+            level = SudokuSolver.ease_level(iterations, backtraced)
 
-            try:
-                iterations, backtraced = solver.solve()
+            if(level == ease_level):
+                return (solution, iterations)
 
-            except(TimeoutException):
-                print('Timeout.')
-
-            # TODO turn this into separate function.
-            if not(backtraced):
-
-                if(len(iterations) in range(3, 6) and
-                     iterations[0] in range(30, 55)):
-
-                    with open('%s/mild_sudokus.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (solution))
-
-                    with open('%s/mild_solve_tracks.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (str(iterations)))
-
-                    return 'mild'
-
-                elif(len(iterations) in range(5, 8) and 
-                       iterations[0] in range(20, 30)):
-
-                    with open('%s/difficult_sudokus.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (solution))
-
-                    with open('%s/difficult_solve_tracks.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (str(iterations)))
-
-                    return 'difficult'
-
-                elif(len(iterations) in range(7, 10) and
-                        iterations[0] in range(15, 20)):
-
-                    with open('%s/fiendish_sudokus.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (solution))
-
-                    with open('%s/fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (str(iterations)))
-
-                    return 'fiendish'
-
-                elif(len(iterations) >= 10 and iterations[0] < 15):
-
-                    with open('%s/super_fiendish_sudokus.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (solution))
-
-                    with open('%s/super_fiendish_solve_tracks.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (str(iterations)))
-
-                    return 'super fiendish'
-                
-                else:
-                    with open('%s/no_level_sudokus.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (solution))
-
-                    with open('%s/no_level_solve_tracks.txt' % (outdir), 'a+') as fout:
-                        fout.write('%s\n' % (str(iterations)))
         return None
 
     @staticmethod
