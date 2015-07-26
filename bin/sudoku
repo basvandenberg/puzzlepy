@@ -20,19 +20,26 @@ def solve(fin):
         print(result)
 
 
-def generate(outdir):
+def generate(level, number, outdir):
 
-    generate = 500
-    tries = 25
     generated = 0
 
-    while generated < generate:
+    while generated < number:
 
-        success = SudokuGenerator.generate_from_pattern(tries, outdir)
+        result = SudokuGenerator.generate_from_pattern(level)
 
-        if not(success is None):
+        if not(result is None):
+
+            solution, iterations = result
+
+            with open('%s/%s_sudokus.txt' % (outdir, level), 'a+') as fout:
+                fout.write('%s\n' % (solution))
+
+            with open('%s/%s_solve_tracks.txt' % (outdir, level), 'a+') as fout:
+                fout.write('%s\n' % (str(iterations)))
+
             generated += 1
-            print('%i: %s' % (generated, success))
+            print(generated)
 
 
 if __name__ == "__main__":
@@ -47,10 +54,14 @@ if __name__ == "__main__":
     #parser.add_argument('--input-file', type=argparse.FileType('r'))
     #parser.add_argument('--output-file', type=argparse.FileType('w'))
 
+    # Generate options
+    parser.add_argument('--number', type=int)
+    parser.add_argument('--level')
+
     args = parser.parse_args()
 
     if(args.solve):
         solve(args.solve)
 
     elif(args.generate):
-        generate(args.generate)
+        generate(args.level, args.number, args.generate)
