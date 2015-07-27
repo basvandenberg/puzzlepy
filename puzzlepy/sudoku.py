@@ -202,6 +202,15 @@ class Sudoku(Grid):
         return sudoku
 
     @classmethod
+    def full_sudoku(cls):
+
+        sudoku = cls()
+        sudoku.set_initial_values(Sudoku.BASIC_SUDOKU_VALUES)
+        sudoku.set_valid_values()
+
+        return sudoku
+
+    @classmethod
     def from_string(cls, s):
 
         init_values = []
@@ -335,8 +344,8 @@ class SudokuSolver():
         if not(self.sudoku.is_finished()):
 
             backtraced = True
+
             if(backtrack):
-                print('Start backtrack')
                 self.backtrack('sorted', multiple_solutions)
 
         return (iterations, backtraced)
@@ -373,7 +382,6 @@ class SudokuSolver():
     @staticmethod
     def ease_level(iterations, backtraced):
 
-        # TODO turn this into separate function.
         if(backtraced):
             return 'impossible'
 
@@ -451,9 +459,6 @@ class SudokuSolver():
 
     def backtrack(self, type, multiple_solutions=False):
 
-        #self.fout = open(self.sudoku.file_out, 'w')
-        #self.counter = 0
-
         self._solutions = []
         self.multiple_solutions = multiple_solutions
 
@@ -468,13 +473,9 @@ class SudokuSolver():
     
         self._backtrack(nodes, 0)
         
-        #print(self.counter)
-        #self.fout.close()
         return self._solutions
     
     def _backtrack(self, nodes, tree_depth):
-
-        #print('Backtrack tree depth: %i' % (tree_depth))
 
         # No solution?
         if(tree_depth >= len(nodes)):
@@ -485,19 +486,10 @@ class SudokuSolver():
 
         for value in values:
 
-            #print('(%i, %i): %i' % (cell.coord.i, cell.coord.j, value))
-
             cell.value = value
 
             # Solution found.
             if(self.sudoku.is_finished()):
-                #print('Solution found!')
-                #self.counter += 1
-                #print(self.counter)
-                #print(self.sudoku)
-                #self.fout.write('\n# %010d\n' % (self.counter))
-                #self.fout.write('%s' % (str(self.sudoku)))
-                #self.fout.flush()
 
                 self._solutions.append(copy.deepcopy(self.sudoku))
 
@@ -522,6 +514,89 @@ class SudokuSolver():
         return False
 
 class SudokuGenerator():
+
+    BASIC_SUDOKU_VALUES = [
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [4, 5, 6, 7, 8, 9, 1, 2, 3],
+        [7, 8, 9, 1, 2, 3, 4, 5, 6],
+        [2, 3, 4, 5, 6, 7, 8, 9, 1],
+        [5, 6, 7, 8, 9, 1, 2, 3, 4],
+        [8, 9, 1, 2, 3, 4, 5, 6, 7],
+        [3, 4, 5, 6, 7, 8, 9, 1, 2],
+        [6, 7, 8, 9, 1, 2, 3, 4, 5],
+        [9, 1, 2, 3, 4, 5, 6, 7, 8]
+    ]
+
+    @staticmethod
+    def random_solution():
+
+        values = SudokuGenerator.BASIC_SUDOKU_VALUES
+
+        for swap_i in range(random.randint(100, 10000)):
+
+            action = random.randrange(3)
+
+            if(action == 0):
+                block_i = random.randrange(3)
+                ind = random.sample(range(3), 2)
+                SudokuGenerator._swap_rows(values, block_i, ind[0], ind[1])
+
+            elif(action == 1):
+                block_i = random.randrange(3)
+                ind = random.sample(range(3), 2)
+                SudokuGenerator._swap_cols(values, block_i, ind[0], ind[1])
+
+            elif(action == 2):
+                value0 = random.randint(1, 9)
+                value1 = random.randint(1, 9)
+                SudokuGenerator._swap_values(values, value0, value1)
+
+        sudoku = Sudoku()
+        sudoku.set_initial_values(values)
+        sudoku.set_valid_values()
+
+        return sudoku
+
+    @staticmethod
+    def _swap_values(values, value0, value1):
+
+        for row_i, row in enumerate(values):
+            for col_i, value in enumerate(row):
+                if(value == value0):
+                    values[row_i][col_i] = value1
+                if(value == value1):
+                    values[row_i][col_i] = value0
+
+    @staticmethod
+    def _swap_rows(values, block_row_i, row_i0, row_i1):
+        
+        i0 = block_row_i * 3 + row_i0
+        i1 = block_row_i * 3 + row_i1
+
+        tmp = values[i0]
+        values[i0] = values[i1]
+        values[i1] = tmp
+
+    @staticmethod
+    def _swap_cols(values, block_col_i, col_i0, col_i1):
+
+        i0 = block_col_i * 3 + col_i0
+        i1 = block_col_i * 3 + col_i1
+ 
+        for row in values:
+            
+            tmp = row[i0]
+            row[i0] = row[i1]
+            row[i1] = tmp
+
+    @staticmethod
+    def random_backtrack_solution():
+
+        sudoku = Sudoku.empty_sudoku()
+        solver = SudokuSolver(sudoku)
+        solution = solver.backtrack('random')[0]
+
+        return solution
 
     @staticmethod
     def generate():
@@ -570,9 +645,6 @@ class SudokuGenerator():
 
             index += 1
 
-        # why did I do this??
-        # sudoku = copy.deepcopy(solution)
-
         return (last, solution, level)
 
     def backtrack_generate(self):
@@ -620,15 +692,6 @@ class SudokuGenerator():
                 return (solution, iterations)
 
         return None
-
-    @staticmethod
-    def random_solution():
-
-        sudoku = Sudoku.empty_sudoku()
-        solver = SudokuSolver(sudoku)
-        solution = solver.backtrack('random')[0]
-
-        return solution
 
 
 class SudokuPatternGenerator():
