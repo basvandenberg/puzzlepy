@@ -152,14 +152,52 @@ class Grid:
 
         return coords
 
-    def shuffled_top_triangle_coordinates(self):
+    def top_triangle_coordinates(self):
+        '''Returns the coordinates of the top trianglar grid part.
+        
+        The coordinates retured cover the top triangular part with the top
+        half of the diagonal coordinates including the coordinate of the cell
+        at the grid center.
 
-        coords = [(i, j) for i in range(self.m) for j in range(i + 1)]
-        random.shuffle(coords)
+        It is assumed that the grid is square with odd m and n.
+
+        For a 5x5 grid this would return the following coordinates
+        (* = returned coordinate, . = not returned).
+
+        * * * * *
+        . * * * *
+        . . * * *
+        . . . . *
+        . . . . .
+
+        For a 9x9 grid this function would return the following coordinates:
+
+        * * * * * * * * *
+        . * * * * * * * *
+        . . * * * * * * *
+        . . . * * * * * *
+        . . . . * * * * *
+        . . . . . . * * *
+        . . . . . . . * *
+        . . . . . . . . *
+        . . . . . . . . .
+
+        '''
+
+        coords = []
+        center = self.m // 2
+
+        for i in range(self.m):
+            start = i if i <= center else i + 1
+
+            for j in range(start, self.n):
+                coords.append((i, j))
+
+        #random.shuffle(coords)
 
         return coords
 
-    def rotated_coord(coord):
+    def rotated_coord(self, coord):
 
         # Assumes odd m and n
         center_m = self.m // 2
