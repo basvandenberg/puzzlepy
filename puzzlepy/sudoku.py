@@ -513,7 +513,8 @@ class SudokuSolver():
         cell.value = None
         return False
 
-class SudokuGenerator():
+
+class SudokuTransform():
 
     BASIC_SUDOKU_VALUES = [
         [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -527,10 +528,16 @@ class SudokuGenerator():
         [9, 1, 2, 3, 4, 5, 6, 7, 8]
     ]
 
+    # TODO move to SudokuGenerator?
     @staticmethod
-    def random_solution():
+    def random_sudoku_values():
 
-        values = SudokuGenerator.BASIC_SUDOKU_VALUES
+        sudoku = SudokuGenerator.BASIC_SUDOKU_VALUES
+        random_transform(sudoku)
+        return sudoku
+
+    @staticmethod
+    def random_transform(sudoku):
 
         for swap_i in range(random.randint(100, 10000)):
 
@@ -539,55 +546,138 @@ class SudokuGenerator():
             if(action == 0):
                 block_i = random.randrange(3)
                 ind = random.sample(range(3), 2)
-                SudokuGenerator._swap_rows(values, block_i, ind[0], ind[1])
+                SudokuTransformer.swap_rows(values, block_i, ind[0], ind[1])
 
             elif(action == 1):
                 block_i = random.randrange(3)
                 ind = random.sample(range(3), 2)
-                SudokuGenerator._swap_cols(values, block_i, ind[0], ind[1])
+                SudokuTransformer.swap_cols(values, block_i, ind[0], ind[1])
 
             elif(action == 2):
                 value0 = random.randint(1, 9)
                 value1 = random.randint(1, 9)
-                SudokuGenerator._swap_values(values, value0, value1)
+                SudokuTransformer.permute(values)
+
+    @staticmethod
+    def random_permute(sudoku):
+
+        # Generate random mapping from old to new value.
+        value_map = dict(zip(range(1, 10), random.sample(range(1, 10), 9)))
+
+        # Empty remains empty.
+        value_map[None] = None
+
+        # Permute sudoku with value map.
+        SudokuTransform.permute(sudoku, value_map)
+
+    @staticmethod
+    def permute(sudoku, value_map)
+
+        # Use mapping to replace old values with new values in sudoku.
+        for i, row in enumerate(sudoku):
+            for j, value in enumerate(row):
+                sudoku[i][j] = value_map[value]
+
+    @staticmethod
+    def transpose(sudoku):
+    
+        for i in range(9):
+            for j in range(9):
+                if not(i == j):
+                    tmp = sudoku[i][j]
+                    sudoku[i][j] = sudoku[j][i]
+                    sudoku[j][i] = tmp
+
+    @staticmethod
+    def hmirror(sudoku):
+        
+        for row_i in range(4):
+            tmp = sudoku[row_i]
+            sudoku[row_i] = sudoku[8 - row_i]
+            sudoku[8 - row_i] = tmp
+
+    @staticmethod
+    def vmirror(sudoku):
+        
+        for row in sudoku:
+            for col_i in range(4):
+                tmp = row[col_i]
+                row[col_i] = row[8 - col_i]
+                row[8 - col_i] = tmp
+
+    @staticmethod
+    def random_permute_rows(sudoku):
+
+        block_row_index = random.randrange(3)
+        row_indices = random.sample(range(3), 3)
+
+        permute_rows(sudoku, block_row_index, row_indices)
+
+    @staticmethod
+    def permute_rows(sudoku, block_row_index, row_indices):
+        
+        offset = block_row_index * 3
+        i0 = offset + row_indices[0]
+        i1 = offset + row_indices[1]
+        i2 = offset + row_indices[2]
+
+        tmp = sudoku[i0]
+        sudoku[i0] = sudoku[i1]
+        sudoku[i1] = tmp
+
+    @staticmethod
+    def random_permute_cols(values):
+
+        block_col_index = random.randrange(3)
+        col_indices = random.sample(range(3), 3)
+
+        SudokuTransform.permute_rows(sudoku, block_col_index, col_indices)
+
+    @staticmethod
+    def permute_cols(values, block_col_index, col_indices):
+
+        offset = block_col_index * 3
+        i0 = offset + col_indices[0]
+        i1 = offset + col_indices[1]
+        i2 = offset + col_indices[2]
+ 
+        for row in sudokus:
+            
+            tmp = row[i0]
+            row[i0] = row[i1]
+            row[i1] = tmp
+
+    @staticmethod
+    def random_permute_block_rows(sudoku):
+        
+        block_row_indices = random.sample(range(3), 3)
+        SudokuTransform.permute_block_rows(sudoku, block_row_indices)
+
+    @staticmethod
+    def permute_block_rows(sudoku, block_row_indices):
+        pass
+
+    @staticmethod
+    def random_permute_block_cols(sudoku):
+
+        block_col_indices = random.sample(range(3), 3)
+        SudokuTransform.permute_block_cols(sudoku, block_col_indices)
+
+    @staticmethod
+    def permute_block_cols(sudoku, block_col_indices):
+        pass
+
+
+class SudokuGenerator():
+
+    @staticmethod
+    def random_solution():
 
         sudoku = Sudoku()
         sudoku.set_initial_values(values)
         sudoku.set_valid_values()
 
         return sudoku
-
-    @staticmethod
-    def _swap_values(values, value0, value1):
-
-        for row_i, row in enumerate(values):
-            for col_i, value in enumerate(row):
-                if(value == value0):
-                    values[row_i][col_i] = value1
-                if(value == value1):
-                    values[row_i][col_i] = value0
-
-    @staticmethod
-    def _swap_rows(values, block_row_i, row_i0, row_i1):
-        
-        i0 = block_row_i * 3 + row_i0
-        i1 = block_row_i * 3 + row_i1
-
-        tmp = values[i0]
-        values[i0] = values[i1]
-        values[i1] = tmp
-
-    @staticmethod
-    def _swap_cols(values, block_col_i, col_i0, col_i1):
-
-        i0 = block_col_i * 3 + col_i0
-        i1 = block_col_i * 3 + col_i1
- 
-        for row in values:
-            
-            tmp = row[i0]
-            row[i0] = row[i1]
-            row[i1] = tmp
 
     @staticmethod
     def random_backtrack_solution():
@@ -662,7 +752,7 @@ class SudokuGenerator():
     @staticmethod
     def generate_from_pattern(ease_level):
         
-        num_tries = 100
+        num_tries = 25
         rand_solution = SudokuGenerator.random_solution()
 
         for i in range(num_tries):
