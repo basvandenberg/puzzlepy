@@ -606,66 +606,60 @@ class SudokuTransform():
                 row[8 - col_i] = tmp
 
     @staticmethod
-    def random_permute_rows(sudoku):
+    def random_swap_rows(sudoku):
 
-        block_row_index = random.randrange(3)
-        row_indices = random.sample(range(3), 3)
+        i0, i1 = random.sample(range(3), 2)
+        offset = random.randrange(3) * 3
 
-        permute_rows(sudoku, block_row_index, row_indices)
+        SudokuTransform.swap_rows(sudoku, i0, i1)
 
     @staticmethod
-    def permute_rows(sudoku, block_row_index, row_indices):
-        
-        offset = block_row_index * 3
-        i0 = offset + row_indices[0]
-        i1 = offset + row_indices[1]
-        i2 = offset + row_indices[2]
+    def swap_rows(sudoku, i0, i1):
 
         tmp = sudoku[i0]
         sudoku[i0] = sudoku[i1]
         sudoku[i1] = tmp
 
     @staticmethod
-    def random_permute_cols(values):
+    def random_swap_cols(values):
 
-        block_col_index = random.randrange(3)
-        col_indices = random.sample(range(3), 3)
+        j0, j1 = random.sample(range(3), 2)
+        offset = random.randrange(3) * 3
 
-        SudokuTransform.permute_rows(sudoku, block_col_index, col_indices)
+        SudokuTransform.swap_cols(sudoku, j0, j1)
 
     @staticmethod
-    def permute_cols(values, block_col_index, col_indices):
+    def swap_cols(sudoku, j0, j1):
 
-        offset = block_col_index * 3
-        i0 = offset + col_indices[0]
-        i1 = offset + col_indices[1]
-        i2 = offset + col_indices[2]
- 
         for row in sudokus:
             
-            tmp = row[i0]
-            row[i0] = row[i1]
-            row[i1] = tmp
+            tmp = row[j0]
+            row[j0] = row[j1]
+            row[j1] = tmp
 
     @staticmethod
-    def random_permute_block_rows(sudoku):
+    def random_swap_block_rows(sudoku):
         
-        block_row_indices = random.sample(range(3), 3)
-        SudokuTransform.permute_block_rows(sudoku, block_row_indices)
+        i0, i1 = random.sample(range(3), 2)
+        SudokuTransform.swap_block_rows(sudoku, i0, i1)
 
     @staticmethod
-    def permute_block_rows(sudoku, block_row_indices):
-        pass
+    def swap_block_rows(sudoku, i0, i1):
+        
+        for i in range(3):
+            SudokuTransform.swap_rows(sudoku, i0 * 3 + i, i1 * 3 + i)
 
     @staticmethod
-    def random_permute_block_cols(sudoku):
+    def random_swap_block_cols(sudoku):
 
-        block_col_indices = random.sample(range(3), 3)
-        SudokuTransform.permute_block_cols(sudoku, block_col_indices)
+        j0, j1 = random.sample(range(3), 2)
+        SudokuTransform.swap_block_cols(sudoku, j0, j1)
 
     @staticmethod
-    def permute_block_cols(sudoku, block_col_indices):
-        pass
+    def swap_block_cols(sudoku, j0, j1):
+        
+        for j in range(3):
+            SudokuTransform.swap_cols(sudoku, j0 * 3 + j, j1 * 3 + j)
 
 
 class SudokuGenerator():
