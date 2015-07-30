@@ -571,7 +571,7 @@ class SudokuTransform():
         SudokuTransform.permute(sudoku, value_map)
 
     @staticmethod
-    def permute(sudoku, value_map)
+    def permute(sudoku, value_map):
 
         # Use mapping to replace old values with new values in sudoku.
         for i, row in enumerate(sudoku):
@@ -584,9 +584,7 @@ class SudokuTransform():
         for i in range(9):
             for j in range(9):
                 if not(i == j):
-                    tmp = sudoku[i][j]
-                    sudoku[i][j] = sudoku[j][i]
-                    sudoku[j][i] = tmp
+                    SudokuTransform.swap_cells(sudoku, i, j, j, i)
 
     @staticmethod
     def hmirror(sudoku):
@@ -606,12 +604,11 @@ class SudokuTransform():
                 row[8 - col_i] = tmp
 
     @staticmethod
-    def random_swap_rows(sudoku):
+    def swap_cells(sudoku, i0, j0, i1, j1):
 
-        i0, i1 = random.sample(range(3), 2)
-        offset = random.randrange(3) * 3
-
-        SudokuTransform.swap_rows(sudoku, i0, i1)
+        tmp = sudoku[i0][j0]
+        sudoku[i0][j0] = sudoku[i1][j1]
+        sudoku[i1][j1] = tmp
 
     @staticmethod
     def swap_rows(sudoku, i0, i1):
@@ -621,21 +618,28 @@ class SudokuTransform():
         sudoku[i1] = tmp
 
     @staticmethod
+    def swap_cols(sudoku, j0, j1):
+
+        for row in sudokus:       
+            tmp = row[j0]
+            row[j0] = row[j1]
+            row[j1] = tmp
+
+    @staticmethod
+    def random_swap_rows(sudoku):
+
+        i0, i1 = random.sample(range(3), 2)
+        offset = random.randrange(3) * 3
+
+        SudokuTransform.swap_rows(sudoku, i0, i1)
+
+    @staticmethod
     def random_swap_cols(values):
 
         j0, j1 = random.sample(range(3), 2)
         offset = random.randrange(3) * 3
 
         SudokuTransform.swap_cols(sudoku, j0, j1)
-
-    @staticmethod
-    def swap_cols(sudoku, j0, j1):
-
-        for row in sudokus:
-            
-            tmp = row[j0]
-            row[j0] = row[j1]
-            row[j1] = tmp
 
     @staticmethod
     def random_swap_block_rows(sudoku):
