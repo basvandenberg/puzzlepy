@@ -16,12 +16,15 @@ class Coord:
     def add(self, coord):
         return Coord(self.i + coord.i, self.j + coord.j)
 
+    @classmethod
+    def from_tuple(cls, tuple):
+        return cls(tuple[0], tuple[1])
+
     def __iter__(self):
         yield self.i
         yield self.j
 
     def __str__(self):
-
         return '(%i, %i)' % (self.i, self.j)
 
 NORTH = 0

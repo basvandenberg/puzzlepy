@@ -193,8 +193,6 @@ class Grid:
             for j in range(start, self.n):
                 coords.append((i, j))
 
-        #random.shuffle(coords)
-
         return coords
 
     def rotated_coord(self, coord):

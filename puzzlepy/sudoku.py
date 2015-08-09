@@ -23,6 +23,7 @@ import random
 import json
 
 from puzzlepy.grid import Grid
+from puzzlepy.coord import Coord
 from puzzlepy.timeout import timeout
 #from puzzlepy.timeout import TimeoutException
 
@@ -344,7 +345,7 @@ class SudokuSolver():
 
     def __init__(self, sudoku):
 
-        self.sudoku = sudoku
+        self.sudoku = copy.deepcopy(sudoku)
 
     def solve(self, backtrack=False, multiple_solutions=False):
 
@@ -551,10 +552,10 @@ class SudokuGenerator():
     def random_solution(method='transform'):
 
         if(method == 'transform'):
-            return random_transform_solution()
+            return SudokuGenerator.random_transform_solution()
 
         elif(method == 'backtrack'):
-            return random_backtrack_solution()
+            return SudokuGenerator.random_backtrack_solution()
 
         else:
             return None
@@ -635,54 +636,77 @@ class SudokuGenerator():
         return (last, solution, level)
 
     @staticmethod
-    def generate_backtrack():
+    def generate_backtrack(level):
 
-        cells = SudokuGenerator.random_solution().cells
-        nodes = []
+        for trial in range(1000):
 
-        self._backtrack(nodes, 0)
+            print('\nTrial: %i\n' % (trial))
+            solution = SudokuGenerator.random_solution_values()
+            coords = SudokuGenerator.random_solution().top_triangle_coordinates()
+            random.shuffle(coords)
+
+            if(SudokuGenerator._generate_backtrack(level, solution, coords)):
+
+                print('Found!!')
+                break
 
     @staticmethod
-    def _generate_backtrack(nodes, tree_level):
+    def _generate_backtrack(level, values, coords):
 
-        '''
-        # No solution?
-        if(tree_depth >= len(nodes)):
-            print('Done backtracing.')
+        # Tree leaf reached without result.
+        if(len(coords) == 0):
+            print('Leaf')
             return False
 
-        cell, values = nodes[tree_depth]
+        coord = coords[0]
+        other_coords = coords[1:]
+        #print(coord)
+        #print(other_coords)
 
-        for value in values:
+        # Create sudoku.
+        sudoku = Sudoku()
+        sudoku.set_initial_values(values)
+        #print(sudoku)
 
-            cell.value = value
+        # Clear first coord in coords and rotated coord.
+        rotated_coord = sudoku.rotated_coord(coord)
+        #print(rotated_coord)
+        sudoku.get_cell(Coord.from_tuple(coord)).clear_value()
+        sudoku.get_cell(Coord.from_tuple(rotated_coord)).clear_value()
 
-            # Solution found.
-            if(self.sudoku.is_finished()):
+        sudoku.set_valid_values()
+        #print(sudoku)
 
-                self._solutions.append(copy.deepcopy(self.sudoku))
+        new_values = sudoku.get_values();
+        #print(new_values)
 
-                if(self.multiple_solutions):
-                    cell.value = None
-                    return False
-                else:
-                    return True
+        # Solve sudoke and determine ease level.
+        solver = SudokuSolver(sudoku)
+        iterations, backtraced = solver.solve()
+        ease_level = SudokuSolver.ease_level(iterations, backtraced)
 
-            # Valid grid, but not finshed yet, proceed with next tree level.
-            if(self.sudoku.is_valid() and self._backtrack(nodes, tree_depth + 1)):
-                if(self.multiple_solutions):
-                    cell.value = None
-                return True
+        #print(iterations)
+        #print(backtraced)
+        #print(ease_level)
 
-            # Invalid grid, skip this value
-            else:
-                pass
+        # Found sudoku with required ease level.
+        if(ease_level == level):
+            print('Found')
+            print(iterations)
+            print(sudoku)
+            return True
 
-        # No more values left to explore, done with this branch, level up.
-        cell.value = None
-        return False
-        '''
-        return False
+        elif(ease_level == 'impossible'):
+            print('Impossible')
+            return False
+
+        else:
+            for c in other_coords:
+                return SudokuGenerator._generate_backtrack(level,
+                    new_values, other_coords)
+
+            print('Level')
+            #return False
 
     @staticmethod
     def generate_from_pattern(ease_level):
@@ -884,19 +908,13 @@ class SudokuTransform():
             action = random.randrange(3)
 
             if(action == 0):
-                block_i = random.randrange(3)
-                ind = random.sample(range(3), 2)
-                SudokuTransformer.swap_rows(values, block_i, ind[0], ind[1])
+                SudokuTransform.random_swap_rows(sudoku)
 
             elif(action == 1):
-                block_i = random.randrange(3)
-                ind = random.sample(range(3), 2)
-                SudokuTransformer.swap_cols(values, block_i, ind[0], ind[1])
+                SudokuTransform.random_swap_cols(sudoku)
 
             elif(action == 2):
-                value0 = random.randint(1, 9)
-                value1 = random.randint(1, 9)
-                SudokuTransformer.permute(values)
+                SudokuTransform.random_permute(sudoku)
 
     @staticmethod
     def random_permute(sudoku):
@@ -960,7 +978,7 @@ class SudokuTransform():
     @staticmethod
     def swap_cols(sudoku, j0, j1):
 
-        for row in sudokus:       
+        for row in sudoku:       
             tmp = row[j0]
             row[j0] = row[j1]
             row[j1] = tmp
@@ -969,16 +987,12 @@ class SudokuTransform():
     def random_swap_rows(sudoku):
 
         i0, i1 = random.sample(range(3), 2)
-        offset = random.randrange(3) * 3
-
         SudokuTransform.swap_rows(sudoku, i0, i1)
 
     @staticmethod
-    def random_swap_cols(values):
+    def random_swap_cols(sudoku):
 
         j0, j1 = random.sample(range(3), 2)
-        offset = random.randrange(3) * 3
-
         SudokuTransform.swap_cols(sudoku, j0, j1)
 
     @staticmethod
