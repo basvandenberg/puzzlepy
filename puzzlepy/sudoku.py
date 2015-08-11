@@ -638,30 +638,22 @@ class SudokuGenerator():
     @staticmethod
     def generate_backtrack(level):
 
-        for trial in range(1000):
+        for trial in range(1):
 
             print('\nTrial: %i\n' % (trial))
             solution = SudokuGenerator.random_solution_values()
             coords = SudokuGenerator.random_solution().top_triangle_coordinates()
             random.shuffle(coords)
 
-            if(SudokuGenerator._generate_backtrack(level, solution, coords)):
+            mask = [[False for i in range(9)] for j in range(9)]
+
+            if(SudokuGenerator._generate_backtrack(level, solution, mask, coords)):
 
                 print('Found!!')
                 break
 
     @staticmethod
-    def _generate_backtrack(level, values, coords):
-
-        # Tree leaf reached without result.
-        if(len(coords) == 0):
-            print('Leaf')
-            return False
-
-        coord = coords[0]
-        other_coords = coords[1:]
-        #print(coord)
-        #print(other_coords)
+    def _generate_backtrack(level, values, mask, coords):
 
         # Create sudoku.
         sudoku = Sudoku()
@@ -669,44 +661,48 @@ class SudokuGenerator():
         #print(sudoku)
 
         # Clear first coord in coords and rotated coord.
+        coord = coords[0]
         rotated_coord = sudoku.rotated_coord(coord)
+        other_coords = coords[1:]
+        #print(coord)
+        #print(other_coords)
         #print(rotated_coord)
-        sudoku.get_cell(Coord.from_tuple(coord)).clear_value()
-        sudoku.get_cell(Coord.from_tuple(rotated_coord)).clear_value()
+
+        # Mask out current coordinate.
+        local_mask = copy.deepcopy(mask)
+        local_mask[coord[0]][coord[1]] = True
+        local_mask[rotated_coord[0]][rotated_coord[1]] = True
+
+        masked = [(i, j) for i in range(9) for j in range(9) if local_mask[i][j]]
+        for c in masked:
+            sudoku.get_cell(Coord.from_tuple(c)).clear_value()
 
         sudoku.set_valid_values()
-        #print(sudoku)
-
-        new_values = sudoku.get_values();
-        #print(new_values)
 
         # Solve sudoke and determine ease level.
         solver = SudokuSolver(sudoku)
         iterations, backtraced = solver.solve()
         ease_level = SudokuSolver.ease_level(iterations, backtraced)
 
-        #print(iterations)
-        #print(backtraced)
+        #print(41 - len(other_coords))
+        #print(coord)
         #print(ease_level)
+        #print(sudoku)
 
-        # Found sudoku with required ease level.
         if(ease_level == level):
-            print('Found')
-            print(iterations)
+            #print('Found')
+            #print(iterations)
             print(sudoku)
-            return True
 
-        elif(ease_level == 'impossible'):
-            print('Impossible')
-            return False
+        # Do not further explore this branch.
+        if not(ease_level == 'impossible'):
 
-        else:
-            for c in other_coords:
-                return SudokuGenerator._generate_backtrack(level,
-                    new_values, other_coords)
+            # Recursive call exploring all child-nodes.
+            for index, c in enumerate(other_coords):
+                rest_coords = other_coords[index:]
+                #print(reordered_coords)
 
-            print('Level')
-            #return False
+                SudokuGenerator._generate_backtrack(level, values, local_mask, rest_coords)
 
     @staticmethod
     def generate_from_pattern(ease_level):
