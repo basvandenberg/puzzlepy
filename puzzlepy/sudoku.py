@@ -692,27 +692,21 @@ class SudokuGenerator():
 class SudokuTransform():
 
     @staticmethod
-    def random_transform(sudoku, rotational_symmetry=False):
+    def random_transform(sudoku):
 
         actions = [
-            {'sym': True, 'action': SudokuTransform.random_permute},
-            {'sym': True, 'action': SudokuTransform.transform},
-            {'sym': True, 'action': SudokuTransform.hmirror},  # dubbel?
-            {'sym': True, 'action': SudokuTransform.vmirror},  # dubbel?
-            {'sym': False, 'action': SudokuTransform.random_swap_rows},
-            {'sym': False, 'action': SudokuTransform.random_swap_cols},
-            {'sym': False, 'action': SudokuTransform.random_swap_block_rows},
-            {'sym': False, 'action': SudokuTransform.random_swap_block_cols}
+            SudokuTransform.random_permute,
+            SudokuTransform.transpose,
+            SudokuTransform.hmirror, # dubbel?
+            SudokuTransform.vmirror, # dubbel?
+            SudokuTransform.random_swap_rows,
+            SudokuTransform.random_swap_cols,
+            SudokuTransform.random_swap_block_rows,
+            SudokuTransform.random_swap_block_cols
         ]
 
-        for swap_i in range(random.randint(100, 10000)):
-
-            action = actions[random.randrange(8)]
-
-            if(rotational_symmetry and not action['sym']):
-                action['action'](sudoku, rotational_symetry=True)
-            else:
-                action['action'](sudoku)
+        for i in range(random.randint(100, 10000)):
+            actions[random.randrange(len(actions))](sudoku)
 
     @staticmethod
     def random_permute(sudoku):
@@ -747,29 +741,44 @@ class SudokuTransform():
             SudokuTransform.swap_cols(sudoku, col_i, 8 - col_i)
 
     @staticmethod
-    def random_swap_rows(sudoku, rotational_symmetry=False):
+    def random_swap_rows(sudoku):
 
-        i0, i1 = random.sample(range(3), 2)
-        SudokuTransform.swap_rows(sudoku, i0, i1)
+        wheel = random.randrange(4)
+
+        if(wheel == 0):
+            SudokuTransform.swap_rows(sudoku, 3, 5)
+
+        else:
+            i0, i1 = random.sample(range(3), 2)
+            i2 = 8 - i0;
+            i3 = 8 - i1;
+            SudokuTransform.swap_rows(sudoku, i0, i1)
+            SudokuTransform.swap_rows(sudoku, i2, i3)
 
     @staticmethod
-    def random_swap_cols(sudoku, rotational_symmetry=False):
+    def random_swap_cols(sudoku):
 
-        offset = random.randrange(3) * 3
-        j0, j1 = random.sample(range(offset, offset + 3), 2)
-        SudokuTransform.swap_cols(sudoku, j0, j1)
+        wheel = random.randrange(4)
+
+        if(wheel == 0):
+            SudokuTransform.swap_cols(sudoku, 3, 5)
+
+        else:
+            i0, i1 = random.sample(range(3), 2)
+            i2 = 8 - i0;
+            i3 = 8 - i1;
+            SudokuTransform.swap_cols(sudoku, i0, i1)
+            SudokuTransform.swap_cols(sudoku, i2, i3)
 
     @staticmethod
-    def random_swap_block_rows(sudoku, rotational_symmetry=False):
+    def random_swap_block_rows(sudoku):
         
-        i0, i1 = random.sample(range(3), 2)
-        SudokuTransform.swap_block_rows(sudoku, i0, i1)
+        SudokuTransform.swap_block_rows(sudoku, 0, 2)
 
     @staticmethod
-    def random_swap_block_cols(sudoku, rotational_symmetry=False):
+    def random_swap_block_cols(sudoku):
 
-        j0, j1 = random.sample(range(3), 2)
-        SudokuTransform.swap_block_cols(sudoku, j0, j1)
+        SudokuTransform.swap_block_cols(sudoku, 0, 2)
 
     # helper functions
 
