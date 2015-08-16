@@ -7,25 +7,22 @@ This module contains three main classes:
 - SudokuSolver
 - SudokuGenerator
 
-And two helper classes used for generating sudokus:
+And a helper class used for 'shuffling' sudokus to generate new sudokus from
+existing ones:
 
-- SudokuPatternGenerator
 - SudokuTransform
 
-The two helper classes work with sudoku values only (array of arrays) and not
+The helper class works with sudoku values only (array of arrays) and not
 with Sudoku objects, because that is faster and easier.
-
 '''
 
+import sys
 import copy
-import itertools
 import random
 import json
 
 from puzzlepy.grid import Grid
 from puzzlepy.coord import Coord
-from puzzlepy.timeout import timeout
-#from puzzlepy.timeout import TimeoutException
 
 class Sudoku(Grid):
 
@@ -195,7 +192,6 @@ class Sudoku(Grid):
         rows = []
         for row in self.cells:
             s = [str(c.value) if not c.value is None else 'null' for c in row]
-            print(s)
             rows.append('    [%s]' % (', '.join(s)))
 
         return '[\n%s\n]' % (',\n'.join(rows))
@@ -296,22 +292,18 @@ class Sudoku(Grid):
         return sudokus
 
     @staticmethod
-    def save_txt(file_name, sudokus):
+    def save_txt(file, sudokus):
 
-        with open(file_name, 'w') as fout:
-
-            for sudoku in sudokus:
-                fout.write('%s\n\n' % (str(sudoku)))
+        for sudoku in sudokus:
+            file.write('%s\n\n' % (str(sudoku)))
 
     @classmethod
-    def load_json(cls, file_name):
+    def load_json(cls, file):
 
         sudokus = []
        
         # Parse json from file.
-        data = {}
-        with open(file_name, 'r') as fin:
-            data = json.load(fin)
+        data = json.load(file)
 
         # Iterate over difficulty levels (discard level, just reading sudos).
         for _, level_sudokus in data.iteritems():
@@ -324,12 +316,10 @@ class Sudoku(Grid):
         return sudokus
 
     @staticmethod
-    def save_json(file_name, sudokus):
-        pass
-
-    @staticmethod
-    def save_node_module(file_name, sudokus):
-        pass
+    def save_json(file, sudokus, level):
+        
+        sudokus_string = ','.join([s.to_json_string() for s in sudokus])
+        file.write('{"%s":[%s]}' % (level, sudokus_string))
 
 
 class SudokuSolver():
@@ -370,58 +360,27 @@ class SudokuSolver():
 
         return (iterations, backtraced)
 
-    # DEPRICATED update!
-    @timeout(1)
-    def evaluate_difficulty(self, backtrack=False):
-
-        iterations, backtraced = self.solve(backtrack=backtrack)
-
-        print(iterations)
-        print(backtraced)
-
-        # level 3: extra fiendish, backtracking
-        if(backtraced):
-            level = 3
-
-        # level 2: fiendish, 15+
-        elif(len(iterations) > 8 and iterations[0] < 5):
-            level = 2
-
-        # level 1: difficult, 7-14 iteraties
-        elif(len(iterations) > 6 and iterations[0] < 7):
-            level = 1
-
-        # level 0: mild, 5-6 iteraties
-        elif(len(iterations) > 4 and iterations[0] < 9):
-            level = 0
-        else:
-            level = -1
-
-        return level
-
     @staticmethod
-    def ease_level(iterations, backtraced):
+    def ease_level(iterations, backtracked):
 
-        if(backtraced):
+        num_iter = len(iterations)
+        first = iterations[0]
+
+        if(backtracked):
             return 'impossible'
 
-        if(len(iterations) in range(3, 6) and
-             iterations[0] in range(30, 55)):
-
+        if(num_iter in [3, 4, 5] and first in range(30, 55)):
             return 'mild'
 
-        elif(len(iterations) in range(5, 8) and 
-               iterations[0] in range(20, 30)):
-
+        elif((num_iter in [4, 5] and first in range(20, 30)) or
+             (num_iter == 6 and first in range(30, 55))):
             return 'difficult'
 
-        elif(len(iterations) in range(7, 10) and
-                iterations[0] in range(15, 20)):
-
+        elif((num_iter == 6 and first in range(15, 30)) or
+             (num_iter in [7, 8] and first in range(30, 55))):
             return 'fiendish'
 
-        elif(len(iterations) >= 10 and iterations[0] < 15):
-
+        elif(num_iter >= 8 and first < 30):
             return 'super-fiendish'
         
         else:
@@ -548,25 +507,52 @@ class SudokuGenerator():
         [9, 1, 2, 3, 4, 5, 6, 7, 8]
     ]
 
+    def generate(level, num_uniques, num_per_unique):
+
+        sudokus = []
+        transformed_sudokus = []
+
+        for i in range(num_uniques):
+
+            s = SudokuGenerator.generate_backtrack(level)
+            sudokus.append(s)
+
+        for i in range(num_per_unique - 1):
+            for s in sudokus:
+                st = SudokuGenerator.generate_from_existing(s)
+                transformed_sudokus.append(st)
+
+        sudokus.extend(transformed_sudokus)
+
+        return sudokus
+
     @staticmethod
     def generate_backtrack(level):
 
-        for trial in range(1):
+        sudoku = None
 
-            print('\nTrial: %i\n' % (trial))
-            solution = SudokuGenerator.random_solution_values()
-            coords = SudokuGenerator.random_solution().top_triangle_coordinates()
+        while True:
+
+            print('NEW')
+
+            solution = SudokuGenerator.random_solution(method='backtrack')
+            values = solution.get_values()
+            coords = solution.top_triangle_coordinates()
             random.shuffle(coords)
-
             mask = [[False for i in range(9)] for j in range(9)]
 
-            if(SudokuGenerator._generate_backtrack(level, solution, mask, coords)):
+            sudoku = SudokuGenerator._backtrack(level, values, mask, coords)
 
-                print('Found!!')
+            if not (sudoku is None):
                 break
 
+        return sudoku
+
     @staticmethod
-    def _generate_backtrack(level, values, mask, coords):
+    def _backtrack(level, values, mask, coords):
+
+        sys.stdout.write('.')
+        sys.stdout.flush()
 
         # Create sudoku.
         sudoku = Sudoku()
@@ -605,51 +591,41 @@ class SudokuGenerator():
         if(ease_level == level):
             #print('Found')
             #print(iterations)
+            print()
             print(sudoku)
+            return sudoku
 
         # Do not further explore this branch.
         if not(ease_level == 'impossible'):
 
             # Recursive call exploring all child-nodes.
             for index, c in enumerate(other_coords):
-                rest_coords = other_coords[index:]
-                #print(reordered_coords)
 
-                SudokuGenerator._generate_backtrack(level, values, local_mask, rest_coords)
+                rest_coords = other_coords[index:]
+                result = SudokuGenerator._backtrack(level, values, local_mask, rest_coords)
+
+                if not(result is None):
+                    return result
+
+            return None
+
+        else:
+            return None
 
     @staticmethod
-    def generate_from_pattern(ease_level):
+    def generate_from_existing(sudoku):
         
-        num_tries = 25
-        rand_solution = SudokuGenerator.random_solution()
+        values = sudoku.get_values()
+        SudokuTransform.random_transform(values)
 
-        for i in range(num_tries):
+        generated_sudoku = Sudoku()
+        generated_sudoku.set_initial_values(values)
 
-            # Clone the random solution.
-            solution = copy.deepcopy(rand_solution)
+        return generated_sudoku
 
-            # Generate pattern sudoku.
-            grid = SudokuPatternGenerator.random_grid()
-            pattern = SudokuPatternGenerator.to_string(grid)
-            pattern_sudoku = Sudoku.from_string(pattern)
-
-            # Apply pattern to the random solution.
-            for cell in pattern_sudoku:
-                if(cell.value is None):
-                    solution.cells[cell.coord.i][cell.coord.j].clear_value()
-
-            # Set valid values.
-            solution.set_valid_values()
-
-            # Solve.
-            solver = SudokuSolver(copy.deepcopy(solution))
-            iterations, backtraced = solver.solve()
-            level = SudokuSolver.ease_level(iterations, backtraced)
-
-            if(level == ease_level):
-                return (solution, iterations)
-
-        return None
+    ###
+    # Creating random solutions.
+    ###
 
     @staticmethod
     def random_solution(method='transform'):
@@ -823,158 +799,3 @@ class SudokuTransform():
         
         for j in range(3):
             SudokuTransform.swap_cols(sudoku, j0 * 3 + j, j1 * 3 + j)
-
-
-class SudokuPatternGenerator():
-
-    RANDOM_SYMETRIC_BLOCKS = [
-
-        [['.', '.', '.'], ['.', '.', '.'], ['.', '.', '.']],
-        [['.', '.', '.'], ['.', '0', '.'], ['.', '.', '.']],
-        [['.', '.', '.'], ['0', '.', '0'], ['.', '.', '.']],
-        [['.', '0', '.'], ['.', '.', '.'], ['.', '0', '.']],
-        [['0', '.', '.'], ['.', '.', '.'], ['.', '.', '0']],
-        [['.', '.', '0'], ['.', '.', '.'], ['0', '.', '.']],
-        [['.', '0', '.'], ['.', '0', '.'], ['.', '0', '.']],
-        [['.', '.', '0'], ['.', '0', '.'], ['0', '.', '.']],
-        [['.', '.', '.'], ['0', '0', '0'], ['.', '.', '.']],
-        [['0', '.', '.'], ['.', '0', '.'], ['.', '.', '0']],
-        [['0', '.', '0'], ['.', '.', '.'], ['0', '.', '0']],
-        [['.', '0', '.'], ['0', '.', '0'], ['.', '0', '.']],
-        [['0', '0', '.'], ['.', '.', '.'], ['.', '0', '0']],
-        [['.', '.', '0'], ['0', '.', '0'], ['0', '.', '.']],
-        [['.', '0', '0'], ['.', '.', '.'], ['0', '0', '.']],
-        [['0', '.', '.'], ['0', '.', '0'], ['.', '.', '0']],
-        [['0', '.', '0'], ['.', '0', '.'], ['0', '.', '0']],
-        [['.', '0', '.'], ['0', '0', '0'], ['.', '0', '.']],
-        [['0', '0', '.'], ['.', '0', '.'], ['.', '0', '0']],
-        [['.', '.', '0'], ['0', '0', '0'], ['0', '.', '.']],
-        [['.', '0', '0'], ['.', '0', '.'], ['0', '0', '.']],
-        [['0', '.', '.'], ['0', '0', '0'], ['.', '.', '0']]
-    ]
-
-    @staticmethod
-    def random_block_pattern(num_filled):
-
-        fill_indices = random.sample(range(9), num_filled)
-        pattern = []
-
-        for rowi in range(3):
-            row = []
-            for coli in range(3):
-
-                if((rowi * 3 + coli) in fill_indices):
-                    row.append('0')
-                else:
-                    row.append('.')
-
-            pattern.append(row)
-
-        return pattern
-    
-    @staticmethod
-    def rotated_block(block):
-
-        rotated = copy.deepcopy(block)
-
-        rotated.reverse()
-        for row in rotated:
-            row.reverse()
-
-        return rotated
-
-    @staticmethod
-    def vmirrored_block(block):
-
-        mirrored = copy.deepcopy(block)
-
-        for row in mirrored:
-            row.reverse()
-
-        return mirrored
-
-    @staticmethod
-    def hconcat(blocks):
-
-        concat = []
-
-        for row_i in range(len(blocks[0])):
-
-            rows = [block[row_i] for block in blocks]
-            row = list(itertools.chain.from_iterable(rows))
-
-            concat.append(row)
-        
-        return concat
-
-    @staticmethod
-    def vconcat(blocks):
-
-        concat = []
-
-        for block in blocks:
-            for row in block:
-                concat.append(copy.copy(row))
-        
-        return concat
-
-    @staticmethod
-    def random_block_row_pattern(num_filled_side, num_filled_center):
-        
-        left = SudokuPatternGenerator.random_block_pattern(num_filled_side)
-        right = SudokuPatternGenerator.vmirrored_block(left)
-        center = SudokuPatternGenerator.random_block_pattern(num_filled_center)
-
-        row = SudokuPatternGenerator.hconcat([left, center, right])
-
-        return row
-
-    @staticmethod
-    def random_grid():
-
-        min_occupied = 25
-        max_occupied = 34
-        num_occupied = 0
-
-        while(num_occupied < min_occupied or num_occupied > max_occupied):
-
-            corner = random.randint(0, 5)
-            hor_edge = random.randint(0, 5)
-            ver_edge = random.randint(0, 5)
-            center = random.randint(0, 5)
-
-            num_occupied = 4 * corner + 2 * hor_edge + 2 * ver_edge + center
-
-        top_left = SudokuPatternGenerator.random_block_pattern(corner)
-        bottom_right = SudokuPatternGenerator.rotated_block(top_left)
-
-        top_right = SudokuPatternGenerator.random_block_pattern(corner)
-        bottom_left = SudokuPatternGenerator.rotated_block(top_right)
-
-        top_center = SudokuPatternGenerator.random_block_pattern(ver_edge)
-        bottom_center = SudokuPatternGenerator.rotated_block(top_center)
-
-        left_center = SudokuPatternGenerator.random_block_pattern(hor_edge)
-        right_center = SudokuPatternGenerator.rotated_block(left_center)
-
-        center = SudokuPatternGenerator.RANDOM_SYMETRIC_BLOCKS[random.randint(
-            0, len(SudokuPatternGenerator.RANDOM_SYMETRIC_BLOCKS) - 1)]
-
-        top = SudokuPatternGenerator.hconcat([top_left, top_center, top_right])
-        middle = SudokuPatternGenerator.hconcat(
-            [left_center, center, right_center])
-        bottom = SudokuPatternGenerator.hconcat(
-            [bottom_left, bottom_center, bottom_right])
-
-        grid = SudokuPatternGenerator.vconcat([top, middle, bottom])
-
-        return grid
-
-    @staticmethod
-    def to_string(field):
-
-        s = ''
-        for row in field:
-            s += '%s\n' % (' '.join(row))
-
-        return s

@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 import argparse
-import traceback
 
-from puzzlepy.sudoku import Sudoku, SudokuSolver, SudokuGenerator,\
-                            SudokuPatternGenerator
+from puzzlepy.sudoku import Sudoku, SudokuSolver, SudokuGenerator
 
 
 def solve(fin):
@@ -20,26 +16,12 @@ def solve(fin):
         print(result)
 
 
-def generate(level, number, outdir):
+def generate(outfile, level, number, seed):
 
-    generated = 0
+    sudokus = SudokuGenerator.generate(level, number, seed)
 
-    while generated < number:
-
-        result = SudokuGenerator.generate_from_pattern(level)
-
-        if not(result is None):
-
-            solution, iterations = result
-
-            with open('%s/%s_sudokus.txt' % (outdir, level), 'a+') as fout:
-                fout.write('%s\n' % (solution))
-
-            with open('%s/%s_solve_tracks.txt' % (outdir, level), 'a+') as fout:
-                fout.write('%s\n' % (str(iterations)))
-
-            generated += 1
-            print(generated)
+    with open(outfile, 'w') as fout:
+        Sudoku.save_json(fout, sudokus, level)
 
 
 if __name__ == "__main__":
@@ -51,12 +33,10 @@ if __name__ == "__main__":
     action.add_argument('--solve', type=argparse.FileType('r'))
     action.add_argument('--generate')
 
-    #parser.add_argument('--input-file', type=argparse.FileType('r'))
-    #parser.add_argument('--output-file', type=argparse.FileType('w'))
-
     # Generate options
-    parser.add_argument('--number', type=int)
     parser.add_argument('--level')
+    parser.add_argument('--number', type=int)
+    parser.add_argument('--seed', type=int)
 
     args = parser.parse_args()
 
@@ -64,4 +44,4 @@ if __name__ == "__main__":
         solve(args.solve)
 
     elif(args.generate):
-        generate(args.level, args.number, args.generate)
+        generate(args.generate, args.level, args.number, args.seed)
