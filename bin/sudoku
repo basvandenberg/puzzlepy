@@ -2,7 +2,9 @@
 
 import argparse
 
-from puzzlepy.sudoku import Sudoku, SudokuSolver, SudokuGenerator
+from puzzlepy.sudoku import Sudoku, SudokuSolver, SudokuGenerator, SudokuCollection
+
+levels = ['mild', 'difficult', 'fiendish', 'super-fiendish']
 
 
 def solve(fin):
@@ -16,12 +18,22 @@ def solve(fin):
         print(result)
 
 
-def generate(outfile, level, number, seed):
+def generate(outfile, level, number):
 
-    sudokus = SudokuGenerator.generate(level, number, seed)
+    sudokus = SudokuGenerator.generate(level, number)
+    Sudoku.save_json(outfile, sudokus, level)
 
-    with open(outfile, 'w') as fout:
-        Sudoku.save_json(fout, sudokus, level)
+
+def generate_batch(outfile, numbers):
+
+    sudokus = SudokuCollection()
+
+    for index, level in enumerate(levels):
+        number = numbers[index]
+        outlevel = level.replace('-', '')
+        sudokus.set_sudokus(SudokuGenerator.generate(level, number), outlevel)
+
+    sudokus.save_nodejs(outfile)
 
 
 if __name__ == "__main__":
@@ -31,12 +43,13 @@ if __name__ == "__main__":
 
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument('--solve', type=argparse.FileType('r'))
-    action.add_argument('--generate')
+    action.add_argument('--generate', type=argparse.FileType('w'))
 
     # Generate options
     parser.add_argument('--level')
     parser.add_argument('--number', type=int)
-    parser.add_argument('--seed', type=int)
+
+    parser.add_argument('--batch', type=int, nargs=4)
 
     args = parser.parse_args()
 
@@ -44,4 +57,8 @@ if __name__ == "__main__":
         solve(args.solve)
 
     elif(args.generate):
-        generate(args.generate, args.level, args.number, args.seed)
+
+        if(args.batch):
+            generate_batch(args.generate, args.batch)
+        else:
+            generate(args.generate, args.level, args.number)

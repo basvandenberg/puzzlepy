@@ -24,6 +24,7 @@ import json
 from puzzlepy.grid import Grid
 from puzzlepy.coord import Coord
 
+
 class Sudoku(Grid):
 
     def __init__(self):
@@ -322,6 +323,32 @@ class Sudoku(Grid):
         file.write('{"%s":[%s]}' % (level, sudokus_string))
 
 
+class SudokuCollection():
+
+    def __init__(self):        
+        self._sudokus = {}
+
+    @property
+    def sudokus(self):
+        return self._sudokus;
+
+    def set_sudokus(self, sudokus, level):
+        self._sudokus[level] = sudokus
+
+    def save_nodejs(self, file):
+
+        pre = '(function(){\n\n    module.exports = {\n\n'
+        post = '\n    };\n}());'
+
+        level_strings = []
+
+        for level, sudokus in self._sudokus.items():
+            jsons = [s.to_json_string() for s in sudokus]
+            level_strings.append('        %s: [\n%s\n        ]' % (level, ',\n                '.join(jsons)))
+
+        file.write('%s%s%s' % (pre, ',\n'.join(level_strings), post))
+
+
 class SudokuSolver():
 
     # Difficulty levels.
@@ -507,22 +534,13 @@ class SudokuGenerator():
         [9, 1, 2, 3, 4, 5, 6, 7, 8]
     ]
 
-    def generate(level, num_uniques, num_per_unique):
+    def generate(level, number):
 
         sudokus = []
-        transformed_sudokus = []
 
-        for i in range(num_uniques):
-
+        for i in range(number):
             s = SudokuGenerator.generate_backtrack(level)
             sudokus.append(s)
-
-        for i in range(num_per_unique - 1):
-            for s in sudokus:
-                st = SudokuGenerator.generate_from_existing(s)
-                transformed_sudokus.append(st)
-
-        sudokus.extend(transformed_sudokus)
 
         return sudokus
 
