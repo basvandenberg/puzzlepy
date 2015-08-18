@@ -343,8 +343,10 @@ class SudokuCollection():
         level_strings = []
 
         for level, sudokus in self._sudokus.items():
+
             jsons = [s.to_json_string() for s in sudokus]
-            level_strings.append('        %s: [\n%s\n        ]' % (level, ',\n                '.join(jsons)))
+            s = '        %s: [\n%s\n        ]' % (level, ',\n'.join(jsons))
+            level_strings.append(s)
 
         file.write('%s%s%s' % (pre, ',\n'.join(level_strings), post))
 
@@ -390,11 +392,11 @@ class SudokuSolver():
     @staticmethod
     def ease_level(iterations, backtracked):
 
-        num_iter = len(iterations)
-        first = iterations[0]
-
         if(backtracked):
             return 'impossible'
+
+        num_iter = len(iterations)
+        first = iterations[0]
 
         if(num_iter in [3, 4, 5] and first in range(30, 55)):
             return 'mild'
