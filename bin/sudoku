@@ -2,29 +2,21 @@
 
 import argparse
 
-from puzzlepy.sudoku import Sudoku, SudokuSolver, SudokuGenerator, SudokuCollection
+from puzzlepy.sudoku import Sudoku
+from puzzlepy.sudoku import SudokuSolver
+from puzzlepy.sudoku import SudokuGenerator
+from puzzlepy.sudoku import SudokuCollection
 
 levels = ['mild', 'difficult', 'fiendish', 'super-fiendish']
 
 
 def solve(fin):
 
-    sudokus = Sudoku.load_txt(fin)
-
-    for s in sudokus:
-        ss = SudokuSolver(s)
-        result = ss.solve()
-
-        print(result)
+    sudokus = SudokuCollection.load_json(fin)
+    sudokus.solve()
 
 
-def generate(outfile, level, number):
-
-    sudokus = SudokuGenerator.generate(level, number)
-    Sudoku.save_json(outfile, sudokus, level)
-
-
-def generate_batch(outfile, numbers):
+def generate(outfile, numbers):
 
     sudokus = SudokuCollection()
 
@@ -33,7 +25,12 @@ def generate_batch(outfile, numbers):
         outlevel = level.replace('-', '')
         sudokus.set_sudokus(SudokuGenerator.generate(level, number), outlevel)
 
-    sudokus.save_nodejs(outfile)
+    sudokus.save_json(outfile)
+
+def test(fin):
+
+    sudokus = SudokuCollection.load_json(fin)
+    sudokus.test()
 
 
 if __name__ == "__main__":
@@ -42,23 +39,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     action = parser.add_mutually_exclusive_group(required=True)
-    action.add_argument('--solve', type=argparse.FileType('r'))
-    action.add_argument('--generate', type=argparse.FileType('w'))
+    action.add_argument('-s', '--solve', type=argparse.FileType('r'))
+    action.add_argument('-g', '--generate', type=argparse.FileType('w'))
+    action.add_argument('-t', '--test', type=argparse.FileType('r'))
 
     # Generate options
-    parser.add_argument('--level')
-    parser.add_argument('--number', type=int)
-
-    parser.add_argument('--batch', type=int, nargs=4)
+    parser.add_argument('-n', '--numbers', type=int, nargs=4)
 
     args = parser.parse_args()
 
     if(args.solve):
         solve(args.solve)
-
     elif(args.generate):
-
-        if(args.batch):
-            generate_batch(args.generate, args.batch)
-        else:
-            generate(args.generate, args.level, args.number)
+        generate(args.generate, args.numbers)
+    elif(args.test):
+        test(args.test)
