@@ -242,7 +242,7 @@ class Sudoku(Grid):
         sudoku.set_valid_values()
 
         return sudoku
-
+    
     @staticmethod
     def _row_from_string(s):
 
@@ -299,6 +299,15 @@ class Sudoku(Grid):
             file.write('%s\n\n' % (str(sudoku)))
 
     @classmethod
+    def from_json(cls, json):
+
+        sudoku = cls()
+        sudoku.set_initial_values(json)
+        sudoku.set_valid_values()
+
+        return sudoku
+
+    @classmethod
     def load_json(cls, file):
 
         sudokus = []
@@ -307,12 +316,9 @@ class Sudoku(Grid):
         data = json.load(file)
 
         # Iterate over difficulty levels (discard level, just reading sudos).
-        for _, level_sudokus in data.iteritems():
+        for _, level_sudokus in data.items():
             for sudoku_values in level_sudokus:
-
-                sudoku = cls()
-                sudoku.set_initial_values(sudoku_values)
-                sudokus.append(sudoku)
+                sudokus.append(Sudoku.from_json(sudoku))
 
         return sudokus
 
@@ -334,6 +340,55 @@ class SudokuCollection():
 
     def set_sudokus(self, sudokus, level):
         self._sudokus[level] = sudokus
+
+    def solve(self):
+
+        for level, sudokus in self._sudokus.items():
+            print('\n%s\n' % (level))
+
+            for sudoku in sudokus:
+                ss = SudokuSolver(sudoku)
+                iterations, backtracked = ss.solve()
+                print('- %s (%s)' % (iterations, backtracked))
+        print()
+
+    def test(self):
+
+        for level, sudokus in self._sudokus.items():
+            print('\n%s\n' % (level))
+
+            for sudoku in sudokus:
+                ss = SudokuSolver(sudoku)
+                solutions = ss.backtrack('sorted', multiple_solutions=True)
+                print('- %i' % (len(solutions)))
+        print()
+
+    def save_json(self, file):
+
+        level_strings = []
+
+        for level, sudokus in self._sudokus.items():
+
+            jsons = [s.to_json_string() for s in sudokus]
+            s = '    "%s": [\n%s\n    ]' % (level, ',\n'.join(jsons))
+            level_strings.append(s)
+
+        file.write('{\n%s\n}' % (',\n'.join(level_strings)))
+
+    @classmethod
+    def load_json(cls, file):
+
+        collection = cls()
+
+        # Parse json from file.
+        data = json.load(file)
+
+        # Iterate over difficulty levels (discard level, just reading sudos).
+        for level, sudokus in data.items():
+            sudokus = [Sudoku.from_json(s) for s in sudokus]
+            collection.set_sudokus(sudokus, level)
+
+        return collection
 
     def save_nodejs(self, file):
 
