@@ -3,7 +3,7 @@ from distutils.core import setup
 config = {
 
     'name': 'puzzlepy',
-    'version': 0.1.0,
+    'version': '0.1.0',
     'author': 'B.A. van den Berg',
     'authon_email': 'b.a.vandenberg@gmail.com',
     'url': 'https://github.com/basvandenberg/puzzlepy',
@@ -21,7 +21,8 @@ config = {
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Games/Entertainment :: Puzzle Games',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+    ],
+    'scripts': ['bin/sudoku']
 }
 
 setup(**config)
