@@ -5,7 +5,7 @@ config = {
     'name': 'puzzlepy',
     'version': '0.1.0',
     'author': 'B.A. van den Berg',
-    'authon_email': 'b.a.vandenberg@gmail.com',
+    'author_email': 'b.a.vandenberg@gmail.com',
     'url': 'https://github.com/basvandenberg/puzzlepy',
     'description': 'Python package for generating, solving, and testing grid-based puzzle games.',
     'download_url': 'https://github.com/basvandenberg/puzzlepy/releases',
