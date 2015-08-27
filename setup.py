@@ -3,7 +3,7 @@ from setuptools import setup
 config = {
 
     'name': 'puzzlepy',
-    'version': '0.1.0',
+    'version': '0.1.1',
     'author': 'B.A. van den Berg',
     'author_email': 'b.a.vandenberg@gmail.com',
     'url': 'https://github.com/basvandenberg/puzzlepy',
